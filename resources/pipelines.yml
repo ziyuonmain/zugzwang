@@ -1,0 +1,15 @@
+resources:
+  pipelines:
+    zugzwang_june2026:
+      name: "Zugzwang June 2026 Pipeline"
+      schema: ${resources.schemas.silver_gold.name}
+      catalog: ${var.catalog}
+      continuous: false
+      serverless: true
+      channel: preview
+      libraries:
+        - file:
+            path: ../src/zugzwang/pipeline.py
+      configuration:
+        zugzwang.environment: ${bundle.target}
+        zugzwang.volume_base_path: "/Volumes/${var.catalog}/${resources.schemas.raw.name}/${resources.volumes.landing.name}"

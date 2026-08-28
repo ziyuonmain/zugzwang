@@ -4,25 +4,46 @@
 bundle:
   name: zugzwang
 
+include:
+  - resources/*.yml
+
+sync:
+  exclude:
+    - .venv
+    - .pytest_cache
+    - .ruff_cache
+    - .git
+    - .agents
+    - .review
+    - .vscode
+    - tests
+    - docs
+    - "**/*.pyc"
+    - "**/__pycache__"
+
+variables:
+  catalog:
+    description: Unity Catalog name for Zugzwang data assets
+    default: zugzwang_dev
+  schema:
+    description: Schema name for Silver and Gold materialized views
+    default: silver_gold
+
 targets:
   dev:
     mode: development
     default: true
     workspace:
       host: https://dbc-d8edd36b-109e.cloud.databricks.com
+    variables:
+      catalog: zugzwang_dev
+      schema: silver_gold
 
-resources:
-  pipelines:
-    zugzwang_june2026:
-      name: "[dev] Zugzwang June 2026 Pipeline"
-      target: zugzwang_silver_gold
-      catalog: zugzwang
-      continuous: false
-      serverless: true
-      channel: preview
-      libraries:
-        - file:
-            path: src/zugzwang/pipeline.py
-      configuration:
-        zugzwang.environment: "dev"
-        zugzwang.volume_base_path: "/Volumes/zugzwang/raw/landing"
+  prod:
+    mode: production
+    workspace:
+      host: https://dbc-d8edd36b-109e.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+    variables:
+      catalog: zugzwang_prod
+      schema: silver_gold

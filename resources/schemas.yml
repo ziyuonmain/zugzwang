@@ -1,0 +1,19 @@
+resources:
+  schemas:
+    raw:
+      name: raw
+      catalog_name: ${var.catalog}
+      comment: "Landing zone and raw source data volumes for Zugzwang"
+
+    silver_gold:
+      name: ${var.schema}
+      catalog_name: ${var.catalog}
+      comment: "Normalized Silver dimensions/facts and Gold analytical mart"
+
+  volumes:
+    landing:
+      name: landing
+      catalog_name: ${var.catalog}
+      schema_name: ${resources.schemas.raw.name}
+      volume_type: MANAGED
+      comment: "Immutable raw source data files"

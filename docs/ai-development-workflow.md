@@ -350,20 +350,14 @@ Instead of repeatedly writing detailed instructions, improve:
 
 A healthy workflow should increasingly look like:
 
-```text
-/design feature
-      ↓
-challenge if consequential
-      ↓
-implement
-      ↓
-/verify
-      ↓
-/review
-      ↓
-/prepare-commits
-      ↓
-commit
+```mermaid
+flowchart TD
+    design["/design feature"] --> challenge{"Challenge if<br/>consequential"}
+    challenge --> implement["Implement"]
+    implement --> verify["/verify"]
+    verify --> review["/review"]
+    review --> prep["/prepare-commits"]
+    prep --> commit["Commit"]
 ```
 
 The repository, ADRs, rules, and tests are the durable project memory.

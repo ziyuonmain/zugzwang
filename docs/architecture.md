@@ -1,4 +1,4 @@
-# Zugzwang Architecture & Execution Model
+# Zugzwang architecture and execution model
 
 ## Overview
 
@@ -6,7 +6,7 @@ Zugzwang is an open-source railway data platform built on Databricks to explore 
 
 ---
 
-## Responsibility Split
+## Responsibility split
 
 Zugzwang strictly separates declarative data transformation graphs from procedural orchestration tasks:
 
@@ -42,31 +42,35 @@ Zugzwang strictly separates declarative data transformation graphs from procedur
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1. Lakeflow Declarative Pipeline (`src/zugzwang/pipeline.py`)
-* **Role:** Owns all `Raw -> Silver -> Gold` dataset transformations and joins.
-* **Paradigm:** Declarative, distributed PySpark DataFrames (`@dp.materialized_view`).
-* **Responsibilities:**
-  * Ingesting raw immutable files directly from `/Volumes/zugzwang/raw/landing/`.
-  * Data quality enforcement via declarative expectations.
-  * Dependency resolution, concurrency management, and ACID Delta Lake materialization.
-  * Real-time DAG lineage and dataset monitoring.
-* **Constraints:** No driver memory collection (`toPandas()`, `collect()`), no procedural I/O scripts.
+### Lakeflow declarative pipeline (`src/zugzwang/pipeline.py`)
 
-### 2. Lakeflow Outer Job (`prepare_sources` & `refresh_pipeline`)
-* **Role:** Owns procedural, heterogeneous operational workflows outside the transformation graph.
-* **Planned Tasks:**
+- **Role:** Owns all `Raw -> Silver -> Gold` dataset transformations and joins.
+- **Paradigm:** Declarative, distributed PySpark DataFrames (`@dp.materialized_view`).
+- **Responsibilities:**
+  - Ingesting raw immutable files directly from `/Volumes/zugzwang/raw/landing/`.
+  - Data quality enforcement via declarative expectations.
+  - Dependency resolution, concurrency management, and ACID Delta Lake materialization.
+  - Real-time DAG lineage and dataset monitoring.
+- **Constraints:** No driver memory collection (`toPandas()`, `collect()`), no procedural I/O scripts.
+
+### Lakeflow outer job (`prepare_sources` and `refresh_pipeline`)
+
+- **Role:** Owns procedural, heterogeneous operational workflows outside the transformation graph.
+- **Planned Tasks:**
   1. `prepare_sources`: Procedural task (`spark_python_task`) responsible for automated download of monthly railway parquet releases, StaDa snapshots, and DWD meteorological archives into the Unity Catalog Volume.
   2. `refresh_pipeline`: `pipeline_task` that triggers a triggered/batch execution of the Lakeflow Declarative Pipeline.
 
 ---
 
-## Current Roadmap & Milestones
+## Current roadmap and milestones
 
-### Milestone 1: Core Pipeline & Analytical Mart (Current)
+### Milestone 1: Core pipeline and analytical mart (current)
+
 - Land raw source files manually/statically in Unity Catalog landing Volume (`data-2026-06.parquet`, `stada_stations.json`, extracted DWD `.txt` files).
 - Validate the Lakeflow Declarative Pipeline end-to-end on Databricks Serverless compute.
 - Verify 100% join match rates and schema conformity on `gold_train_stop_weather`.
 
-### Milestone 2: Automated Source Ingestion & Outer Orchestration (Next)
+### Milestone 2: Automated source ingestion and outer orchestration (next)
+
 - Implement `prepare_sources` task to fetch upstream source data automatically.
 - Configure and deploy the multi-task Lakeflow Job in `databricks.yml` to orchestrate end-to-end runs (`prepare_sources` $\to$ `refresh_pipeline`).

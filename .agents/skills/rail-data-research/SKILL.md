@@ -3,7 +3,7 @@ name: rail-data-research
 description: Research and validate Deutsche Bahn and German public railway data sources, schemas, identifiers, field semantics, licenses, and known data-quality limitations. Use when working with DB timetable, station, journey, delay, cancellation, or rail infrastructure data.
 ---
 
-# Rail Data Research
+# Rail data research
 
 Before implementing transformations against an unfamiliar railway dataset:
 

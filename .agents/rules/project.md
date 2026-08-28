@@ -2,11 +2,11 @@
 trigger: always_on
 ---
 
-# Gleiszeit Project Rules
+# Zugzwang project rules
 
 ## Purpose
 
-Gleiszeit is an open-source rail data platform built around real public
+Zugzwang is an open-source rail data platform built around real public
 Deutsche Bahn data.
 
 The project has two goals:

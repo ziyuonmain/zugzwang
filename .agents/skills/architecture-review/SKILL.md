@@ -1,9 +1,9 @@
 ---
 name: architecture-review
-description: Review proposed Gleiszeit architecture and implementation choices for simplicity, production realism, Databricks fit, maintainability, and unnecessary technology. Use before major architecture decisions or after completing a project milestone.
+description: Review proposed Zugzwang architecture and implementation choices for simplicity, production realism, Databricks fit, maintainability, and unnecessary technology. Use before major architecture decisions or after completing a project milestone.
 ---
 
-# Architecture Review
+# Architecture review
 
 Review the proposed solution as a senior data/platform engineer.
 

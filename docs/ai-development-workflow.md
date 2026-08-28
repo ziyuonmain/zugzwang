@@ -1,10 +1,10 @@
-# AI-Assisted Development Workflow
+# AI-assisted development workflow
 
 This document describes how I use AI tooling while developing Zugzwang.
 
 The goal is to use agents aggressively for implementation and research while keeping architectural decisions, validation, and commit history deliberate and understandable.
 
-## Tool Responsibilities
+## Tool responsibilities
 
 ### Antigravity IDE
 
@@ -12,42 +12,42 @@ Primary implementation environment.
 
 Use Antigravity for:
 
-* repository exploration
-* research
-* architecture proposals
-* implementation
-* refactoring
-* tests
-* Databricks configuration
-* documentation
-* local verification
-* preparing commits
+- repository exploration
+- research
+- architecture proposals
+- implementation
+- refactoring
+- tests
+- Databricks configuration
+- documentation
+- local verification
+- preparing commits
 
 Antigravity may make substantial local changes before they are committed.
 
-### Independent Reviewer
+### Independent reviewer
 
 Use a separate model as an independent challenger when a decision or implementation deserves another opinion.
 
 The reviewer should challenge:
 
-* assumptions
-* architecture
-* technical claims
-* source semantics
-* unnecessary complexity
-* Databricks usage
-* implementation correctness
-* scope creep
-* whether something would withstand senior-level technical discussion
+- assumptions
+- architecture
+- technical claims
+- source semantics
+- unnecessary complexity
+- Databricks usage
+- implementation correctness
+- scope creep
+- whether something would withstand senior-level technical discussion
 
 The reviewer should not simply continue Antigravity's reasoning.
 
 ---
 
-# Normal Development Flow
+## Normal development flow
 
-## 1. Design
+### Design
 
 For non-trivial new functionality:
 
@@ -57,12 +57,12 @@ For non-trivial new functionality:
 
 Use **high reasoning effort** for:
 
-* architecture
-* data modelling
-* source evaluation
-* ambiguous data semantics
-* consequential Databricks decisions
-* ADR-worthy decisions
+- architecture
+- data modelling
+- source evaluation
+- ambiguous data semantics
+- consequential Databricks decisions
+- ADR-worthy decisions
 
 A good `/design` request should normally be short because project rules, skills, ADRs, and existing architecture already provide context.
 
@@ -74,29 +74,29 @@ Example:
 
 The design workflow should:
 
-* read applicable rules
-* use relevant skills
-* respect existing ADRs
-* inspect the current repository
-* propose the smallest useful design
-* explicitly state what should be deferred
-* avoid reopening accepted decisions without new evidence
+- read applicable rules
+- use relevant skills
+- respect existing ADRs
+- inspect the current repository
+- propose the smallest useful design
+- explicitly state what should be deferred
+- avoid reopening accepted decisions without new evidence
 
 Do not immediately implement a design merely because the agent proposed it.
 
 ---
 
-## 2. Challenge Important Decisions
+### Challenge important decisions
 
 Use independent review when:
 
-* selecting data sources
-* accepting a new architecture
-* making a consequential modelling decision
-* an answer appears overly confident
-* Databricks functionality may have been added artificially
-* source semantics are uncertain
-* the proposed solution seems overengineered
+- selecting data sources
+- accepting a new architecture
+- making a consequential modelling decision
+- an answer appears overly confident
+- Databricks functionality may have been added artificially
+- source semantics are uncertain
+- the proposed solution seems overengineered
 
 For long Antigravity sessions, run:
 
@@ -108,11 +108,11 @@ and give the resulting handoff artifact to the independent reviewer.
 
 A handoff should distinguish:
 
-* evidence
-* assumptions
-* decisions
-* implementation
-* unresolved questions
+- evidence
+- assumptions
+- decisions
+- implementation
+- unresolved questions
 
 Research hypotheses are allowed during exploration.
 
@@ -120,7 +120,7 @@ Committed documentation must contain verified facts.
 
 ---
 
-## 3. Implement
+### Implement
 
 Once a design is accepted:
 
@@ -133,11 +133,11 @@ Normally use **medium reasoning effort** for implementation.
 
 Use high effort only when implementation reveals:
 
-* difficult correctness issues
-* ambiguous source behavior
-* complex Spark behaviour
-* architectural conflicts
-* difficult debugging
+- difficult correctness issues
+- ambiguous source behavior
+- complex Spark behaviour
+- architectural conflicts
+- difficult debugging
 
 Allow Antigravity to make coherent changes across multiple files.
 
@@ -145,7 +145,7 @@ Do not force one AI task to equal one Git commit.
 
 ---
 
-## 4. Verify
+### Verify
 
 Before considering a feature complete:
 
@@ -163,19 +163,19 @@ databricks bundle validate -t dev
 
 For data work, verification should also consider:
 
-* dataset grain
-* key uniqueness
-* row multiplication
-* join coverage
-* null behavior
-* representative source records
-* measured rather than assumed data-quality properties
+- dataset grain
+- key uniqueness
+- row multiplication
+- join coverage
+- null behavior
+- representative source records
+- measured rather than assumed data-quality properties
 
 Never claim something was verified unless the corresponding check actually ran.
 
 ---
 
-## 5. Review
+### Review
 
 After implementation:
 
@@ -207,7 +207,7 @@ and ask for independent review.
 
 ---
 
-# Git and Commit Workflow
+## Git and commit workflow
 
 Antigravity may make multiple related changes in the working tree before commits are created.
 
@@ -252,51 +252,51 @@ After approval, create the commits in dependency order.
 
 After committing:
 
-* show the new commit history
-* show remaining local changes
-* report whether the working tree is clean
+- show the new commit history
+- show remaining local changes
+- report whether the working tree is clean
 
 Never:
 
-* discard user changes
-* amend commits without being asked
-* rebase published history without being asked
-* force-push
-* commit credentials or generated datasets
+- discard user changes
+- amend commits without being asked
+- rebase published history without being asked
+- force-push
+- commit credentials or generated datasets
 
 ---
 
-# How to Use Agent Configuration
+## How to use agent configuration
 
-## Rules
+### Rules
 
 Rules encode behavior that should apply repeatedly without being mentioned in prompts.
 
 Examples:
 
-* project scope
-* Python conventions
-* evidence requirements
-* credential handling
-* architectural principles
+- project scope
+- Python conventions
+- evidence requirements
+- credential handling
+- architectural principles
 
 Do not repeat these rules in every chat message.
 
-## Skills
+### Skills
 
 Skills contain specialized knowledge or procedures.
 
 Examples:
 
-* railway-data research
-* Databricks development
-* architecture review
+- railway-data research
+- Databricks development
+- architecture review
 
 Skills should normally activate automatically from the task context.
 
 Explicitly request a skill only when automatic selection appears insufficient.
 
-## Workflows
+### Workflows
 
 Workflows describe repeatable processes and should be invoked explicitly.
 
@@ -310,7 +310,7 @@ Primary workflows:
 /prepare-commits
 ```
 
-## Roles
+### Roles
 
 Roles are optional perspectives such as architect, engineer, and reviewer.
 
@@ -320,7 +320,7 @@ Prefer workflows when a workflow already captures the desired behavior.
 
 ---
 
-# Reasoning Effort
+## Reasoning effort
 
 Recommended default:
 
@@ -337,16 +337,16 @@ Higher reasoning effort does not replace evidence or verification.
 
 ---
 
-# General Principle
+## General principle
 
 Use the AI environment so that prompts can become shorter over time.
 
 Instead of repeatedly writing detailed instructions, improve:
 
-* rules for persistent constraints;
-* skills for reusable expertise;
-* workflows for repeated procedures;
-* ADRs for accepted architectural decisions.
+- rules for persistent constraints;
+- skills for reusable expertise;
+- workflows for repeated procedures;
+- ADRs for accepted architectural decisions.
 
 A healthy workflow should increasingly look like:
 

@@ -1,4 +1,4 @@
-# Project Roles
+# Project roles
 
 Use these roles when they help separate concerns. The user remains the
 technical decision maker.

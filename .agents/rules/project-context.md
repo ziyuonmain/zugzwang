@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 
-# Project Context
+# Project context
 
 This document records discovered facts about the Zugzwang repository.
 
@@ -20,18 +20,18 @@ June 2026 vertical slice implemented and verified locally via unit test suite. R
 
 ## Data model
 
-* **Raw Layer:** Immutable source files in Unity Catalog Volume (`/Volumes/zugzwang/raw/landing/`).
-* **Silver Layer:**
+- **Raw layer:** Immutable source files in Unity Catalog Volume (`/Volumes/zugzwang/raw/landing/`).
+- **Silver layer:**
   - `silver_stations`: Conforming railway station master dimension.
   - `silver_weather_stations`: Active DWD meteorological stations with `has_temperature` and `has_wind` attributes.
   - `silver_station_weather_mapping`: Precomputed Haversine nearest-sensor bridge table with separate temperature and wind distances.
   - `silver_temperature_hourly`: Normalized hourly air temperature and humidity.
   - `silver_wind_hourly`: Normalized hourly wind speed and direction.
   - `silver_train_stops`: Normalized operational stop events with UTC hour anchors.
-* **Gold Layer:**
+- **Gold layer:**
   - `gold_train_stop_weather`: Enriched multi-domain analytical dataset combining stops, station tiers, and ambient environmental conditions.
 
-## Execution model & responsibility split
+## Execution model and responsibility split
 
 - **Lakeflow Declarative Pipeline (`src/zugzwang/pipeline.py`):** Owns all `Raw -> Silver -> Gold` dataset transformations and joins using `@dp.materialized_view`.
 - **Lakeflow Job (Planned Milestone 2):** Will own procedural source acquisition/landing (`prepare_sources`) and trigger the pipeline via `pipeline_task` (`refresh_pipeline`).
@@ -43,5 +43,5 @@ June 2026 vertical slice implemented and verified locally via unit test suite. R
 
 ## Important decisions
 
-- [ADR 0001: Source Selection and Multi-Domain Weather Integration](file:///Users/ziyu1.wang/Codespace/hobby-projects/github/zugzwang/docs/decisions/0001-source-selection-and-weather-integration.md)
-- [Architecture & Execution Model](file:///Users/ziyu1.wang/Codespace/hobby-projects/github/zugzwang/docs/architecture.md)
+- [ADR 0001: Source selection and multi-domain weather integration](file:///Users/ziyu1.wang/Codespace/hobby-projects/github/zugzwang/docs/decisions/0001-source-selection-and-weather-integration.md)
+- [Architecture and execution model](file:///Users/ziyu1.wang/Codespace/hobby-projects/github/zugzwang/docs/architecture.md)

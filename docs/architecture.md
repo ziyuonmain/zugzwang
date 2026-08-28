@@ -12,31 +12,21 @@ Zugzwang strictly separates declarative data transformation graphs from procedur
 
 ```mermaid
 flowchart TD
-    subgraph Job["Outer Orchestration: Lakeflow Job (Planned Milestone 2)"]
-        task1["Task 1: prepare_sources<br/>(Downloads / extracts into landing Volume)"]
-        task2["Task 2: refresh_pipeline<br/>(Triggers the Lakeflow Pipeline)"]
-        task1 --> task2
+    subgraph Job["Outer Orchestration: Lakeflow Job"]
+        t1["Task 1: prepare_sources<br/>(Downloads & lands source archives)"]
+        t2["Task 2: refresh_pipeline<br/>(Triggers declarative pipeline)"]
+        t1 --> t2
     end
 
-    subgraph Pipeline["Transformation Core: Lakeflow Declarative Pipeline (Milestone 1 Core)"]
-        raw["Raw Volume Files<br/>(/Volumes/zugzwang/raw/landing/)"]
-        subgraph Silver["Silver Layer"]
-            s_st["silver_stations"]
-            s_ws["silver_weather_stations"]
-            s_map["silver_station_weather_mapping"]
-            s_tu["silver_temperature_hourly"]
-            s_ff["silver_wind_hourly"]
-            s_ts["silver_train_stops"]
-        end
-        subgraph Gold["Gold Layer"]
-            g_mart["gold_train_stop_weather"]
-        end
-
-        raw --> Silver
-        Silver --> Gold
+    subgraph DataFlow["Declarative Transformation Core"]
+        raw[("Raw Landing Volume<br/>/Volumes/zugzwang_*/raw/landing/")]
+        silver[("Silver Medallion Layer<br/>(Cleaned dimensions, sensor facts & proximity bridge)")]
+        gold[("Gold Medallion Mart<br/>(gold_train_stop_weather)")]
+        raw --> silver --> gold
     end
 
-    task2 -.->|triggers| Pipeline
+    t1 -.->|extracts into| raw
+    t2 ==>|triggers run| DataFlow
 ```
 
 ### Declarative pipeline

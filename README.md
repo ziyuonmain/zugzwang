@@ -19,40 +19,39 @@ The platform demonstrates declarative pipeline engineering and multi-domain data
 
 ```mermaid
 flowchart TD
-    subgraph Raw["Raw Landing Volume (/Volumes/zugzwang/raw/landing/)"]
-        raw_rail["railway/data-2026-06.parquet<br/>(piebro/deutsche-bahn-data)"]
-        raw_stada["stada/stada_stations.json<br/>(DB StaDa Station Master)"]
-        raw_dwd_meta["dwd/*_Beschreibung_Stationen.txt<br/>(DWD Metadata)"]
-        raw_dwd_obs["dwd/extracted/tu & ff/*.txt<br/>(DWD Hourly Observations)"]
+    subgraph Raw["Raw Landing Volume"]
+        raw_rail["railway/data-2026-06.parquet"]
+        raw_stada["stada/stada_stations.json"]
+        raw_dwd["dwd/*.txt (Metadata & Observations)"]
     end
 
-    subgraph Silver["Silver Medallion Layer (src/zugzwang/pipeline.py)"]
-        silver_stations["silver_stations<br/>(StaDa Station Master)"]
-        silver_weather_stations["silver_weather_stations<br/>(Active DWD TU/FF Sensors)"]
-        silver_mapping["silver_station_weather_mapping<br/>(Haversine Nearest-Sensor Bridge)"]
-        silver_stops["silver_train_stops<br/>(UTC Normalized Timetable Stops)"]
-        silver_tu["silver_temperature_hourly<br/>(Hourly Temperature & Humidity)"]
-        silver_ff["silver_wind_hourly<br/>(Hourly Wind Speed & Direction)"]
+    subgraph Silver["Silver Layer"]
+        s_stops["silver_train_stops<br/>(UTC Normalized Timetable)"]
+        s_stations["silver_stations<br/>(StaDa Station Master)"]
+        s_weather_st["silver_weather_stations<br/>(Active DWD Sensors)"]
+        s_mapping["silver_station_weather_mapping<br/>(Haversine Distance Bridge)"]
+        s_tu["silver_temperature_hourly<br/>(Hourly Temperature)"]
+        s_ff["silver_wind_hourly<br/>(Hourly Wind)"]
     end
 
-    subgraph Gold["Gold Medallion Layer (Analytical Mart)"]
-        gold_mart["gold_train_stop_weather<br/>(Enriched Stop Events + Station Tier + Weather Context)"]
+    subgraph Gold["Gold Layer"]
+        gold_mart["gold_train_stop_weather<br/>(Enriched Analytical Mart)"]
     end
 
-    raw_stada --> silver_stations
-    raw_dwd_meta --> silver_weather_stations
-    silver_stations --> silver_mapping
-    silver_weather_stations --> silver_mapping
+    raw_rail --> s_stops
+    raw_stada --> s_stations
+    raw_dwd --> s_weather_st
+    raw_dwd --> s_tu
+    raw_dwd --> s_ff
 
-    raw_rail --> silver_stops
-    raw_dwd_obs --> silver_tu
-    raw_dwd_obs --> silver_ff
+    s_stations --> s_mapping
+    s_weather_st --> s_mapping
 
-    silver_stops --> gold_mart
-    silver_stations --> gold_mart
-    silver_mapping --> gold_mart
-    silver_tu --> gold_mart
-    silver_ff --> gold_mart
+    s_stops --> gold_mart
+    s_stations --> gold_mart
+    s_mapping --> gold_mart
+    s_tu --> gold_mart
+    s_ff --> gold_mart
 ```
 
 For detailed architectural trade-offs, see [Architecture documentation](docs/architecture.md) and [ADR 0001: Source selection and weather integration](docs/decisions/0001-source-selection-and-weather-integration.md).
@@ -80,7 +79,10 @@ For detailed architectural trade-offs, see [Architecture documentation](docs/arc
 
 ```
 zugzwang/
-├── databricks.yml           # Databricks Asset Bundle definition (Lakeflow Pipeline)
+├── databricks.yml           # Databricks Asset Bundle definition
+├── resources/               # Modular bundle resource definitions
+│   ├── pipelines.yml        # Lakeflow Declarative Pipeline resource
+│   └── schemas.yml          # Unity Catalog schemas and volumes
 ├── pyproject.toml           # Project dependencies and tool configurations (uv)
 ├── docs/                    # Architecture documentation and ADRs
 │   ├── architecture.md
@@ -107,7 +109,7 @@ zugzwang/
 
 ### Prerequisites
 
-- Python `>= 3.12`
+- Python >= 3.12
 - [uv](https://github.com/astral-sh/uv)
 - [Databricks CLI](https://docs.databricks.com/dev-tools/cli/index.html) for bundle deployment
 - Java 17+ for local PySpark unit testing
@@ -157,4 +159,4 @@ The pipeline is defined and managed as a Databricks Asset Bundle.
 
 ## License
 
-This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0). See [LICENSE](LICENSE) for details.

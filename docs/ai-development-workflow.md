@@ -216,7 +216,7 @@ Do not automatically commit after each AI task.
 When a logical milestone is complete:
 
 ```text
-/prepare-commits
+/prep-commits
 ```
 
 The workflow should:
@@ -307,7 +307,7 @@ Primary workflows:
 /verify
 /review
 /handoff
-/prepare-commits
+/prep-commits
 ```
 
 ### Roles
@@ -353,10 +353,12 @@ A healthy workflow should increasingly look like:
 ```mermaid
 flowchart TD
     design["/design feature"] --> challenge{"Challenge if<br/>consequential"}
-    challenge --> implement["Implement"]
+    challenge -- Needs revision --> design
+    challenge -- Aligned --> implement["Implement"]
     implement --> verify["/verify"]
     verify --> review["/review"]
-    review --> prep["/prepare-commits"]
+    review -- Fixes required --> implement
+    review -- Approved --> prep["/prep-commits"]
     prep --> commit["Commit"]
 ```
 

@@ -1,0 +1,28 @@
+# Declarative Automation Bundle definition for Zugzwang.
+# See https://docs.databricks.com/dev-tools/bundles/index.html for documentation.
+
+bundle:
+  name: zugzwang
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-d8edd36b-109e.cloud.databricks.com
+
+resources:
+  pipelines:
+    zugzwang_june2026:
+      name: "[dev] Zugzwang June 2026 Pipeline"
+      target: zugzwang_silver_gold
+      catalog: zugzwang
+      continuous: false
+      serverless: true
+      channel: preview
+      libraries:
+        - file:
+            path: src/zugzwang/pipeline.py
+      configuration:
+        zugzwang.environment: "dev"
+        zugzwang.volume_base_path: "/Volumes/zugzwang/raw/landing"

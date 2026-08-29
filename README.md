@@ -86,11 +86,12 @@ zugzwang/
 ├── pyproject.toml           # Project dependencies and tool configurations (uv)
 ├── docs/                    # Architecture documentation and ADRs
 │   ├── architecture.md
+│   ├── glossary.md
 │   └── decisions/
 ├── src/
-│   └── zugzwang/
+│   ├── pipeline.py          # Databricks Lakeflow declarative pipeline entrypoint
+│   └── zugzwang/            # Reusable core library package
 │       ├── config.py        # Path configuration and landing volume resolution
-│       ├── pipeline.py      # Databricks Lakeflow declarative pipeline definition
 │       ├── spatial.py       # Distributed Haversine calculation and proximity mapping
 │       ├── time.py          # Timezone conversion (CEST -> UTC) and hour truncation
 │       └── transformations/ # Pure PySpark transformation logic
@@ -127,9 +128,10 @@ zugzwang/
    uv sync
    ```
 
-3. Run the test suite and linters:
+3. Run the test suite, type checks, and linters:
    ```bash
    uv run pytest
+   uv run ty check
    uv run ruff check .
    uv run ruff format --check .
    ```

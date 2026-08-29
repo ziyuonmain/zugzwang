@@ -10,7 +10,7 @@ Do not infer architecture that is not implemented yet.
 
 ## Current status
 
-June 2026 vertical slice implemented and verified locally via unit test suite. Ready for Databricks workspace validation.
+June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundles (`zugzwang_dev`), and successfully materialized on Databricks Serverless compute (`Update 28d546`). All Silver and Gold materialized views are published in `zugzwang_dev.silver_gold`.
 
 ## Data sources
 
@@ -20,7 +20,7 @@ June 2026 vertical slice implemented and verified locally via unit test suite. R
 
 ## Data model
 
-- **Raw layer:** Immutable source files in Unity Catalog Volume (`/Volumes/zugzwang/raw/landing/`).
+- **Raw layer:** Immutable source files in Unity Catalog Volume (`/Volumes/zugzwang_dev/raw/landing/`).
 - **Silver layer:**
   - `silver_stations`: Conforming railway station master dimension.
   - `silver_weather_stations`: Active DWD meteorological stations with `has_temperature` and `has_wind` attributes.
@@ -33,15 +33,15 @@ June 2026 vertical slice implemented and verified locally via unit test suite. R
 
 ## Execution model and responsibility split
 
-- **Lakeflow Declarative Pipeline (`src/zugzwang/pipeline.py`):** Owns all `Raw -> Silver -> Gold` dataset transformations and joins using `@dp.materialized_view`.
+- **Lakeflow Declarative Pipeline (`src/pipeline.py`):** Owns all `Raw -> Silver -> Gold` dataset transformations and joins using `@dp.materialized_view`.
 - **Lakeflow Job (Planned Milestone 2):** Will own procedural source acquisition/landing (`prepare_sources`) and trigger the pipeline via `pipeline_task` (`refresh_pipeline`).
 
 ## Databricks resources
 
 - Declarative Automation Bundle: `databricks.yml` configured for `dev` target with Serverless compute.
-- Lakeflow Pipeline: `zugzwang_june2026` targeting catalog `zugzwang` and schema `zugzwang_silver_gold`.
+- Lakeflow Pipeline: `zugzwang_june2026` targeting catalog `zugzwang_dev` and schema `silver_gold`.
 
 ## Important decisions
 
-- [ADR 0001: Source selection and multi-domain weather integration](file:///Users/ziyu1.wang/Codespace/hobby-projects/github/zugzwang/docs/decisions/0001-source-selection-and-weather-integration.md)
-- [Architecture and execution model](file:///Users/ziyu1.wang/Codespace/hobby-projects/github/zugzwang/docs/architecture.md)
+- [ADR 0001: Source selection and multi-domain weather integration](docs/decisions/0001-source-selection-and-weather-integration.md)
+- [Architecture and execution model](docs/architecture.md)

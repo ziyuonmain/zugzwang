@@ -2,8 +2,42 @@
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame
+from pyspark.sql.types import (
+    BooleanType,
+    IntegerType,
+    LongType,
+    StringType,
+    StructField,
+    StructType,
+)
 
 from zugzwang.time import local_to_utc_timestamp, truncate_to_utc_hour
+
+# Explicit schema contract for raw railway operational parquet files.
+# Nanosecond timestamp columns are mapped as LongType to prevent PARQUET_TYPE_ILLEGAL
+# during schema inference, in accordance with official Databricks documentation.
+RAILWAY_RAW_SCHEMA = StructType(
+    [
+        StructField('station_name', StringType(), True),
+        StructField('xml_station_name', StringType(), True),
+        StructField('eva', StringType(), True),
+        StructField('train_number', StringType(), True),
+        StructField('line_number', StringType(), True),
+        StructField('final_destination_station', StringType(), True),
+        StructField('delay_in_min', IntegerType(), True),
+        StructField('time', LongType(), True),
+        StructField('arrival_is_canceled', BooleanType(), True),
+        StructField('departure_is_canceled', BooleanType(), True),
+        StructField('train_type', StringType(), True),
+        StructField('train_line_ride_id', StringType(), True),
+        StructField('train_line_station_num', IntegerType(), True),
+        StructField('arrival_planned_time', LongType(), True),
+        StructField('arrival_change_time', LongType(), True),
+        StructField('departure_planned_time', LongType(), True),
+        StructField('departure_change_time', LongType(), True),
+        StructField('id', StringType(), True),
+    ]
+)
 
 
 def transform_train_stops(raw_parquet_df: DataFrame) -> DataFrame:

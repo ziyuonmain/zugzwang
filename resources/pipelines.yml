@@ -9,7 +9,7 @@ resources:
       channel: preview
       libraries:
         - file:
-            path: ../src/zugzwang/pipeline.py
+            path: ../src/pipeline.py
       configuration:
         zugzwang.environment: ${bundle.target}
         zugzwang.volume_base_path: "/Volumes/${var.catalog}/${resources.schemas.raw.name}/${resources.volumes.landing.name}"

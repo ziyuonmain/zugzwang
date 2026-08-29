@@ -7,20 +7,6 @@ bundle:
 include:
   - resources/*.yml
 
-sync:
-  exclude:
-    - .venv
-    - .pytest_cache
-    - .ruff_cache
-    - .git
-    - .agents
-    - .review
-    - .vscode
-    - tests
-    - docs
-    - "**/*.pyc"
-    - "**/__pycache__"
-
 variables:
   catalog:
     description: Unity Catalog name for Zugzwang data assets
@@ -31,16 +17,15 @@ variables:
 
 targets:
   dev:
-    mode: development
     default: true
     workspace:
       host: https://dbc-d8edd36b-109e.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
     variables:
       catalog: zugzwang_dev
       schema: silver_gold
 
   prod:
-    mode: production
     workspace:
       host: https://dbc-d8edd36b-109e.cloud.databricks.com
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}

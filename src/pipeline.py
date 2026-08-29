@@ -1,18 +1,26 @@
 """Databricks Lakeflow Declarative Pipeline for the June 2026 vertical slice."""
 
+from typing import Any, cast
+
 from pyspark import pipelines as dp
 from pyspark.sql import SparkSession
 
 from zugzwang.config import get_volume_paths
 from zugzwang.spatial import build_station_weather_mapping
 from zugzwang.transformations.gold import build_gold_train_stop_weather
-from zugzwang.transformations.railway import transform_train_stops
+from zugzwang.transformations.railway import (
+    RAILWAY_RAW_SCHEMA,
+    transform_train_stops,
+)
 from zugzwang.transformations.stations import transform_stations
 from zugzwang.transformations.weather import (
     build_weather_stations,
     transform_temperature_hourly,
     transform_wind_hourly,
 )
+
+# Lakeflow dynamically attaches .read() to pyspark.pipelines at runtime
+dp_dynamic = cast(Any, dp)
 
 # Initialize paths from volume landing location
 paths = get_volume_paths()
@@ -46,8 +54,8 @@ def silver_weather_stations():
 )
 def silver_station_weather_mapping():
     """Materialized view mapping stations to nearest temperature and wind sensors."""
-    stations_df = dp.read('silver_stations')
-    weather_stations_df = dp.read('silver_weather_stations')
+    stations_df = dp_dynamic.read('silver_stations')
+    weather_stations_df = dp_dynamic.read('silver_weather_stations')
     return build_station_weather_mapping(stations_df, weather_stations_df)
 
 
@@ -85,7 +93,9 @@ def silver_wind_hourly():
 )
 def silver_train_stops():
     """Materialized view for operational train stop events."""
-    raw_parquet = spark.read.parquet(paths.railway_parquet_path)
+    raw_parquet = spark.read.schema(RAILWAY_RAW_SCHEMA).parquet(
+        paths.railway_parquet_path
+    )
     return transform_train_stops(raw_parquet)
 
 
@@ -96,9 +106,9 @@ def silver_train_stops():
 def gold_train_stop_weather():
     """Materialized view for the final enriched multi-domain analytical dataset."""
     return build_gold_train_stop_weather(
-        train_stops_df=dp.read('silver_train_stops'),
-        stations_df=dp.read('silver_stations'),
-        mapping_df=dp.read('silver_station_weather_mapping'),
-        temperature_df=dp.read('silver_temperature_hourly'),
-        wind_df=dp.read('silver_wind_hourly'),
+        train_stops_df=dp_dynamic.read('silver_train_stops'),
+        stations_df=dp_dynamic.read('silver_stations'),
+        mapping_df=dp_dynamic.read('silver_station_weather_mapping'),
+        temperature_df=dp_dynamic.read('silver_temperature_hourly'),
+        wind_df=dp_dynamic.read('silver_wind_hourly'),
     )

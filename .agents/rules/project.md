@@ -68,8 +68,9 @@ is clearly better for development or testing.
 - Put reusable code under src/.
 - Keep notebooks thin; business logic belongs in Python modules.
 - Use type hints.
-- Use single quotes for Python strings where practical.
-- Functions and classes should have brief Google-style docstrings.
+- For Python strings, use single quotation marks (`'`) whenever practical.
+- For docstrings, always use triple double quotation marks (`"""`).
+- Include concise Google-style docstrings for functions, classes, and modules (including `Args:`, `Returns:`, and `Raises:` where applicable).
 - Prefer straightforward functions over unnecessary class hierarchies.
 
 ## Quality

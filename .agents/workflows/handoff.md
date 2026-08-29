@@ -33,6 +33,9 @@ Anything still uncertain.
 ## Challenge focus
 What an independent senior engineer should challenge most aggressively.
 
+## Fix requirement
+Fixes for runtime / platform incompatabilities must include a `Verified against:` line with the relevant official source.
+
 Do not hide uncertainty.
 Do not present hypotheses as facts.
 

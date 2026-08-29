@@ -37,3 +37,7 @@ htmlcov/
 
 # Agent reviews / scratch
 .review/
+
+# Local data
+data/
+.local-data/

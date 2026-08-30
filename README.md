@@ -1,17 +1,44 @@
 # Zugzwang
 
-Zugzwang is an open-source railway data platform built on Databricks. It processes real-world operational timetable and delay data from Deutsche Bahn alongside contemporaneous meteorological observations from the Deutscher Wetterdienst (DWD).
+Zugzwang is an open-source analytical railway data platform built on Databricks. It builds on the accessible operational datasets published by [piebro/deutsche-bahn-data](https://github.com/piebro/deutsche-bahn-data) and enriches them with contemporaneous DB StaDa station reference data and meteorological observations from the Deutscher Wetterdienst (DWD).
 
-The platform demonstrates declarative pipeline engineering and multi-domain data reconciliation on Databricks Lakeflow, Unity Catalog, and Delta Lake.
+The project focuses on the work downstream of DB event collection: reproducible source preparation, identifier and schema normalization, spatial and temporal reconciliation across independent domains, and governed analytical datasets on Databricks Lakeflow, Unity Catalog, and Delta Lake. It provides a reusable foundation for descriptive railway analysis without claiming that weather conditions cause delays.
 
 ---
 
 ## Highlights
 
-- **Multi-domain spatio-temporal reconciliation:** Reconciles operational railway event streams (~14.75M train stops across 5,344 stations in June 2026) with DWD hourly temperature and wind sensor networks lacking shared business keys.
+- **Multi-domain spatio-temporal reconciliation:** Reconciles a large operational railway event dataset (~14.75M train stops across 5,344 stations in June 2026) with DWD hourly temperature and wind sensor networks lacking shared business keys.
 - **Independent sensor proximity resolution:** Maps stations to the nearest active temperature (494 stations) and wind (295 stations) sensors independently using distributed Haversine calculation, avoiding forced-joint network spatial distortion.
 - **Databricks Lakeflow Declarative Pipelines:** Transforms raw landing volumes into medallion layers (Silver dimensions/facts and Gold analytical mart) using declarative materialized views (`@dp.materialized_view`).
 - **Production-minded development:** Built with Python 3.12, managed with `uv`, tested with PySpark unit fixtures, and packaged as a Databricks Asset Bundle (`databricks.yml`) targeting Serverless compute.
+
+---
+
+## Scope and upstream contribution
+
+Zugzwang does not collect Deutsche Bahn timetable events or replace piebro's processing pipeline. The upstream project already collects public DB API responses, publishes documented monthly Parquet releases, and makes the operational data straightforward to download and query.
+
+Zugzwang is building a downstream integration and platform layer that:
+
+- acquires, pins, and validates defined analytical source snapshots;
+- conforms operational EVA identifiers with contemporaneous station master data;
+- maps railway stations to independent DWD temperature and wind networks;
+- aligns local railway timestamps with hourly UTC weather observations;
+- retains sensor distance and source quality attributes for analytical interpretation;
+- materializes reusable Silver and Gold datasets through a deployable Databricks pipeline.
+
+### Current vertical slice
+
+The first implemented vertical slice covers June 2026. Its source files were prepared manually and landed in a Unity Catalog Volume before the Lakeflow Declarative Pipeline was run. The pipeline currently materializes the complete Silver and Gold model on Databricks Serverless compute.
+
+June 2026 is an initial bounded validation period, not the intended permanent scope of the platform. The release has six known missing piebro collection hours. Upstream monthly files can also be reprocessed when their schema or processing logic changes. See the [upstream dataset documentation](https://github.com/piebro/deutsche-bahn-data#readme) for its schema, collection method, license, and current quality notes.
+
+### Next milestone: automated source ingestion
+
+The next milestone replaces the manual bootstrap with a reproducible source-ingestion module and an outer Lakeflow Job. Its intended outcomes are automated acquisition and validation of the selected piebro, StaDa, and DWD sources, recorded provenance for the landed dataset, safe preparation of a complete analytical snapshot, and orchestration of the existing declarative transformation pipeline.
+
+This keeps piebro responsible for collecting and processing DB operational events while Zugzwang owns reproducible multi-source preparation and Databricks orchestration.
 
 ---
 

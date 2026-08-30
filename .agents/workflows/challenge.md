@@ -25,3 +25,10 @@ description: Challenge a technical claim, architecture decision, or proposed fix
 - Alternatives considered
 - Recommendation
 - Remaining uncertainty
+
+Write the output to the path requested by the user. Otherwise:
+
+- challenge of `.review/handoff.md` -> `.review/challenge.md`
+- challenge of another artifact -> `.review/<artifact-stem>-challenge.md`
+
+Never overwrite an existing review artifact unless explicitly requested.

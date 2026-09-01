@@ -15,8 +15,9 @@ The project has two goals:
 2. Demonstrate production-minded data engineering and solution architecture
    on Databricks.
 
-The project must remain a believable open-source side project. Do not add
-Databricks features solely to create a technology showcase.
+Keep the project focused and maintainable as an open-source solo project. Add a
+Databricks feature only when it addresses an identified data, analytical, or
+operational need; do not add features solely to showcase the platform.
 
 ## Scope
 

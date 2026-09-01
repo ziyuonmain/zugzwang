@@ -13,10 +13,16 @@ tasks:
   # =========================================================================
 
   check:
-    desc: Run all local verifications (linter, type checker, and unit tests)
+    desc: Run all local verifications
     cmds:
       - task: lint
+      - task: metadata:check
       - task: test
+
+  metadata:check:
+    desc: Validate the published table metadata contract
+    cmds:
+      - uv run python -m zugzwang.table_contract --check
 
   test:
     desc: Run pytest unit test suite

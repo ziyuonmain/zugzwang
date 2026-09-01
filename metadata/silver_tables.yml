@@ -1,0 +1,268 @@
+# Published tables in the Unity Catalog Silver schema.
+#
+# Descriptions become Unity Catalog comments; column order and types define the
+# explicit Lakeflow output schema. Run `task metadata:check` after editing.
+version: 1
+
+tables:
+  stations:
+    description: >-
+      One row per usable EVA from the DB InfraGO StaDa snapshot, with station
+      attributes and WGS84 coordinates.
+    columns:
+      - name: eva
+        type: string
+        description: >-
+          Eight-character, zero-padded EVA identifier from StaDa
+          evaNumbers[].number; table grain is one row per EVA.
+      - name: station_number
+        type: bigint
+        description: >-
+          DB InfraGO StaDa station number from the top-level station object.
+      - name: station_name
+        type: string
+        description: Station name from the DB InfraGO StaDa station object.
+      - name: ds100
+        type: string
+        description: >-
+          First RIL100 identifier returned for the station in the source snapshot.
+      - name: category
+        type: int
+        description: Station category value supplied by the DB InfraGO StaDa API.
+      - name: price_category
+        type: int
+        description: >-
+          Price category value supplied by the DB InfraGO StaDa API.
+      - name: federal_state
+        type: string
+        description: >-
+          German federal state supplied for the station by the DB InfraGO StaDa API.
+      - name: regional_bereich
+        type: string
+        description: >-
+          Name of the DB InfraGO regional organizational unit supplied by StaDa.
+      - name: latitude
+        type: double
+        description: WGS84 latitude associated with the EVA entry in StaDa.
+      - name: longitude
+        type: double
+        description: WGS84 longitude associated with the EVA entry in StaDa.
+      - name: is_main_eva
+        type: boolean
+        description: >-
+          Whether StaDa marks this EVA entry as the main EVA for its station object.
+
+  weather_stations:
+    description: >-
+      DWD CDC stations whose temperature or wind metadata covers the complete
+      June 2026 analysis period.
+    columns:
+      - name: dwd_station_id
+        type: string
+        description: >-
+          Five-character, zero-padded DWD Climate Data Center station identifier.
+      - name: station_name
+        type: string
+        description: >-
+          DWD observation-station name, preferring temperature metadata when both
+          networks contain the station.
+      - name: federal_state
+        type: string
+        description: Federal state recorded in the DWD station metadata.
+      - name: altitude_m
+        type: double
+        description: Station altitude in metres from the DWD station metadata.
+      - name: latitude
+        type: double
+        description: WGS84 station latitude from DWD metadata.
+      - name: longitude
+        type: double
+        description: WGS84 station longitude from DWD metadata.
+      - name: has_temperature
+        type: boolean
+        description: >-
+          Whether DWD TU metadata covers the complete configured analysis period.
+      - name: has_wind
+        type: boolean
+        description: >-
+          Whether DWD FF metadata covers the complete configured analysis period.
+
+  station_weather_mapping:
+    description: >-
+      One row per railway EVA, mapping independently to the nearest eligible DWD
+      temperature and wind stations.
+    columns:
+      - name: eva
+        type: string
+        description: Eight-character railway-station EVA identifier.
+      - name: nearest_tu_station_id
+        type: string
+        description: >-
+          DWD station identifier of the nearest station with temperature coverage
+          for the analysis period.
+      - name: nearest_tu_dist_km
+        type: double
+        description: >-
+          Haversine great-circle distance in kilometres to the selected
+          temperature station.
+      - name: nearest_ff_station_id
+        type: string
+        description: >-
+          DWD station identifier of the nearest station with wind coverage for the
+          analysis period.
+      - name: nearest_ff_dist_km
+        type: double
+        description: >-
+          Haversine great-circle distance in kilometres to the selected wind station.
+
+  temperature_hourly:
+    description: >-
+      June 2026 DWD CDC hourly 2-metre air temperature and relative humidity
+      observations at station-hour grain.
+    columns:
+      - name: dwd_station_id
+        type: string
+        description: >-
+          Five-character, zero-padded DWD Climate Data Center station identifier.
+      - name: observation_hour_utc
+        type: timestamp
+        description: DWD MESS_DATUM observation hour parsed as UTC.
+      - name: temp_celsius
+        type: double
+        description: >-
+          DWD TT_TU hourly air temperature at 2 metres in degrees Celsius; source
+          missing-value sentinel is stored as null.
+      - name: humidity_pct
+        type: double
+        description: >-
+          DWD RF_TU hourly relative humidity in percent; source missing-value
+          sentinel is stored as null.
+      - name: qn_9
+        type: int
+        description: >-
+          DWD QN_9 quality-control level for the temperature and humidity record;
+          source missing-value sentinel is stored as null.
+
+  wind_hourly:
+    description: >-
+      June 2026 DWD CDC hourly mean wind speed and direction observations at
+      station-hour grain.
+    columns:
+      - name: dwd_station_id
+        type: string
+        description: >-
+          Five-character, zero-padded DWD Climate Data Center station identifier.
+      - name: observation_hour_utc
+        type: timestamp
+        description: DWD MESS_DATUM observation hour parsed as UTC.
+      - name: wind_speed_ms
+        type: double
+        description: >-
+          DWD F hourly mean wind speed in metres per second; source missing-value
+          sentinel is stored as null.
+      - name: wind_direction_deg
+        type: int
+        description: >-
+          DWD D hourly mean wind direction in degrees; source missing-value
+          sentinel is stored as null.
+      - name: qn_3
+        type: int
+        description: >-
+          DWD QN_3 quality-control level for the wind record; source missing-value
+          sentinel is stored as null.
+
+  train_stops:
+    description: >-
+      June 2026 DB-derived operational timetable events at unique train-stop
+      grain, normalized to UTC.
+    columns:
+      - name: id
+        type: string
+        description: >-
+          Unique train-stop identifier documented by the monthly processed
+          railway dataset publisher.
+      - name: eva
+        type: string
+        description: Eight-character, zero-padded EVA identifier of the railway stop.
+      - name: station_name
+        type: string
+        description: >-
+          Normalized station name supplied by the monthly processed railway dataset.
+      - name: xml_station_name
+        type: string
+        description: Station name from the underlying DB timetable XML response.
+      - name: train_number
+        type: string
+        description: >-
+          Train number from the DB timetable train-line field; combine with
+          train_type for a service label.
+      - name: train_type
+        type: string
+        description: >-
+          Train type supplied by the DB timetable data, for example ICE, IC, or RE.
+      - name: line_number
+        type: string
+        description: >-
+          Route line number supplied for arrival or departure; non-unique and
+          commonly absent for long-distance services.
+      - name: final_destination_station
+        type: string
+        description: Final destination station supplied for the train stop.
+      - name: train_line_ride_id
+        type: string
+        description: >-
+          Unique train-ride identifier documented by the monthly processed railway
+          dataset publisher.
+      - name: train_line_station_num
+        type: int
+        description: Position of the station within the train ride.
+      - name: delay_in_min
+        type: int
+        description: >-
+          Stop-level delay in minutes from the monthly processed railway dataset;
+          no more specific arrival or departure meaning is assumed.
+      - name: arrival_is_canceled
+        type: boolean
+        description: Whether the arrival at this train stop is marked as cancelled.
+      - name: departure_is_canceled
+        type: boolean
+        description: Whether the departure at this train stop is marked as cancelled.
+      - name: event_time_local
+        type: timestamp
+        description: >-
+          Published actual arrival or departure time interpreted as Europe/Berlin
+          local wall-clock time.
+      - name: event_time_local_nanos
+        type: bigint
+        description: >-
+          Original timezone-naive Parquet nanosecond value retained for source
+          traceability.
+      - name: event_time_utc
+        type: timestamp
+        description: >-
+          Actual arrival or departure time converted from Europe/Berlin local time
+          to UTC.
+      - name: event_hour_utc
+        type: timestamp
+        description: >-
+          event_time_utc truncated to the start of its UTC hour for weather joins.
+      - name: arrival_planned_time_utc
+        type: timestamp
+        description: >-
+          Published planned arrival time converted from Europe/Berlin local time to UTC.
+      - name: arrival_change_time_utc
+        type: timestamp
+        description: >-
+          Published actual or changed arrival time converted from Europe/Berlin
+          local time to UTC.
+      - name: departure_planned_time_utc
+        type: timestamp
+        description: >-
+          Published planned departure time converted from Europe/Berlin local time
+          to UTC.
+      - name: departure_change_time_utc
+        type: timestamp
+        description: >-
+          Published actual or changed departure time converted from Europe/Berlin
+          local time to UTC.
+

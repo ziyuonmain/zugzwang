@@ -1,0 +1,121 @@
+# Published tables in the Unity Catalog Gold schema.
+#
+# Descriptions become Unity Catalog comments; column order and types define the
+# explicit Lakeflow output schema. Run `task metadata:check` after editing.
+version: 1
+
+tables:
+  train_stop_weather:
+    description: >-
+      One row per operational train stop enriched with StaDa attributes and
+      nearest-station DWD hourly weather context; no causal weather attribution
+      is implied.
+    columns:
+      - name: id
+        type: string
+        description: Unique train-stop identifier from silver.train_stops.
+      - name: eva
+        type: string
+        description: Eight-character EVA identifier of the railway stop.
+      - name: station_name
+        type: string
+        description: >-
+          StaDa station name when matched, otherwise the operational source
+          station name.
+      - name: category
+        type: int
+        description: Station category supplied by DB InfraGO StaDa.
+      - name: price_category
+        type: int
+        description: Station price category supplied by DB InfraGO StaDa.
+      - name: federal_state
+        type: string
+        description: >-
+          German federal state supplied for the station by DB InfraGO StaDa.
+      - name: train_type
+        type: string
+        description: Train type supplied by the operational timetable data.
+      - name: train_number
+        type: string
+        description: Train number supplied by the operational timetable data.
+      - name: line_number
+        type: string
+        description: >-
+          Non-unique route line number supplied by the operational timetable data.
+      - name: final_destination_station
+        type: string
+        description: Final destination station supplied for the train stop.
+      - name: train_line_ride_id
+        type: string
+        description: >-
+          Unique train-ride identifier documented by the monthly processed railway
+          dataset publisher.
+      - name: train_line_station_num
+        type: int
+        description: Position of the station within the train ride.
+      - name: event_time_local
+        type: timestamp
+        description: >-
+          Actual arrival or departure time represented as Europe/Berlin local
+          wall-clock time.
+      - name: event_time_utc
+        type: timestamp
+        description: Actual arrival or departure time converted to UTC.
+      - name: event_hour_utc
+        type: timestamp
+        description: UTC hour used to join the train stop to hourly DWD observations.
+      - name: delay_in_min
+        type: int
+        description: >-
+          Stop-level delay in minutes; no more specific arrival or departure
+          meaning is assumed.
+      - name: arrival_is_canceled
+        type: boolean
+        description: Whether the arrival at this train stop is marked as cancelled.
+      - name: departure_is_canceled
+        type: boolean
+        description: Whether the departure at this train stop is marked as cancelled.
+      - name: temp_celsius
+        type: double
+        description: >-
+          DWD hourly 2-metre air temperature in degrees Celsius from the nearest
+          eligible temperature station.
+      - name: humidity_pct
+        type: double
+        description: >-
+          DWD hourly relative humidity in percent from the nearest eligible
+          temperature station.
+      - name: qn_tu
+        type: int
+        description: >-
+          DWD QN_9 quality-control level associated with the temperature and
+          humidity record.
+      - name: nearest_tu_station_id
+        type: string
+        description: DWD identifier of the nearest eligible temperature station.
+      - name: nearest_tu_dist_km
+        type: double
+        description: >-
+          Haversine great-circle distance in kilometres to the selected
+          temperature station.
+      - name: wind_speed_ms
+        type: double
+        description: >-
+          DWD hourly mean wind speed in metres per second from the nearest eligible
+          wind station.
+      - name: wind_direction_deg
+        type: int
+        description: >-
+          DWD hourly mean wind direction in degrees from the nearest eligible wind
+          station.
+      - name: qn_ff
+        type: int
+        description: >-
+          DWD QN_3 quality-control level associated with the wind record.
+      - name: nearest_ff_station_id
+        type: string
+        description: DWD identifier of the nearest eligible wind station.
+      - name: nearest_ff_dist_km
+        type: double
+        description: >-
+          Haversine great-circle distance in kilometres to the selected wind station.

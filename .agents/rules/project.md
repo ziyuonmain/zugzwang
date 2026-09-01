@@ -82,6 +82,21 @@ Before considering work complete:
 - verify changed Databricks bundle configuration where applicable
 - avoid committing credentials, generated datasets, or workspace state
 
+## Published table metadata
+
+Treat `metadata/silver_tables.yml` and `metadata/gold_tables.yml` as part of
+the published table interface. When a change adds, removes, renames, reorders,
+or retypes a table column, adds or removes a table, moves a table between
+schemas, or changes its meaning:
+
+- update the corresponding metadata file in the same change;
+- keep table and column descriptions consistent with verified source semantics;
+- do not duplicate the table or column inventory in Python; and
+- run `task metadata:check` and the relevant unit tests before completion.
+
+If no metadata update is needed, verify that the published schema is genuinely
+unchanged rather than assuming an internal transformation edit has no effect.
+
 ## AI-assisted development
 
 Do not generate large implementations from vague requirements.

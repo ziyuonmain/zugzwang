@@ -3,8 +3,8 @@
 ## Direction
 
 Zugzwang is intended to become a monthly railway analytics pipeline maintaining
-a rolling year of analysis-ready data. June 2026 is the first validated release
-and the basis of the first analytical case study.
+a rolling year of analysis-ready data. June 2026 is the first validated vertical
+slice and the basis of the first analytical case study.
 
 The roadmap separates demonstrated capabilities from intended ones. A target is
 not considered implemented until it has processed real source data successfully.
@@ -17,11 +17,25 @@ not considered implemented until it has processed real source data successfully.
 - The deployed Lakeflow Job runs source preparation before the declarative
   pipeline refresh.
 - Source manifests record landed artifact identity and integrity.
+- Source publication verifies copied artifacts before writing the manifest and
+  preserves foreign or corrupted snapshots for investigation.
+- Weather transformations restrict observations to the June analysis period.
+- The standard local check runs linting, type checks, metadata validation, and
+  the unit and local PySpark transformation tests.
 - The analytical case study and recurring monthly operation are not complete.
 
 ## Delivery sequence
 
-### 1. Publish the June case study — next
+### 1. Complete deployed-data validation — in progress
+
+- Validate the published consumer schemas and target-period coverage in the
+  deployed workspace.
+- Add explicit deployed-data checks for the documented station, mapping,
+  weather, train-stop, and Gold grains.
+- Record source coverage, join coverage, and Lakeflow expectation results with
+  the June case-study output.
+
+### 2. Publish the June case study — next
 
 Establish the first useful analytical result before broadening the platform:
 
@@ -30,15 +44,6 @@ Establish the first useful analytical result before broadening the platform:
 - source-coverage and weather-match reporting;
 - weather-stratified comparisons with quality and sensor-distance caveats;
 - one reproducible notebook or concise SQL dashboard.
-
-### 2. Harden the June contracts — in progress
-
-- Validate complete consumer schemas and target-period coverage.
-- Verify copied landing artifacts before committing the manifest.
-- Protect foreign or corrupted snapshots from automated cleanup.
-- Enforce the documented station, mapping, weather, and train-stop grains.
-- Limit weather facts to the intended analytical period.
-- Run the complete unit and Spark transformation suite in the standard check.
 
 ### 3. Process a second real month — planned
 

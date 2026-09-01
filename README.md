@@ -5,9 +5,9 @@ combines monthly German train-stop records with contemporaneous station data and
 nearby hourly weather observations to examine where and when delays and
 cancellations concentrate.
 
-June 2026 is the first validated release, not the final scope. The project is
-working toward a monthly pipeline that maintains a rolling twelve months of
-analysis-ready data under a bounded retention policy.
+June 2026 is the first validated vertical slice, not the final scope. The
+project is working toward a monthly pipeline that maintains a rolling twelve
+months of analysis-ready data under a bounded retention policy.
 
 ## What it aims to answer
 
@@ -41,7 +41,7 @@ distance and quality attributes needed to interpret the resulting joins.
 | June 2026 Silver and Gold pipeline | Implemented and materialized on Databricks Serverless |
 | End-to-end Lakeflow orchestration | Implemented for the fixed June snapshot |
 | June analytical case study | Next deliverable |
-| June source-contract hardening | In progress |
+| June deployed-data validation | In progress |
 | Generic monthly processing | Planned after the June case study and a second real month |
 | Rolling twelve-month retention | Planned |
 
@@ -126,6 +126,9 @@ Silver and Gold table definitions under `metadata/`. Use `task metadata:check`
 to validate that metadata alone.
 
 ### Databricks deployment
+
+The supported deployment and first-run procedure is documented in
+[Initial dataset setup](docs/initial-dataset-setup.md). In summary:
 
 ```bash
 databricks bundle validate -t dev

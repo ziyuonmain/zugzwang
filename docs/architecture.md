@@ -2,103 +2,123 @@
 
 ## Overview
 
-Zugzwang is an open-source railway data platform built on Databricks to explore German railway operations and demonstrate production-grade data engineering.
+Zugzwang is a monthly batch analytics platform for German railway operations.
+It uses Databricks to acquire a fixed public-data snapshot, normalize railway,
+station, and weather records, and publish one analysis-ready dataset.
 
----
-
-## Responsibility split
-
-Zugzwang strictly separates declarative data transformation graphs from procedural orchestration tasks:
+The implementation separates procedural source acquisition from declarative
+data transformation:
 
 ```mermaid
-flowchart TD
-    subgraph Job["Outer Orchestration: Lakeflow Job"]
-        t1["Task 1: prepare_sources<br/>(Downloads & lands source archives)"]
-        t2["Task 2: refresh_pipeline<br/>(Triggers declarative pipeline)"]
-        t1 --> t2
+flowchart LR
+    sources["Public sources<br/>Railway · StaDa · DWD"]
+
+    subgraph job["Lakeflow Job"]
+        prepare["prepare_sources<br/>Download · Validate · Manifest"]
+        refresh["refresh_pipeline"]
+        prepare --> refresh
     end
 
-    subgraph DataFlow["Declarative Transformation Core"]
-        raw[("Raw Landing Volume<br/>zugzwang_*.raw.landing")]
-        silver[("Silver schema<br/>(Cleaned dimensions, sensor facts & proximity bridge)")]
-        gold[("Gold schema<br/>(train_stop_weather)")]
+    subgraph pipeline["Lakeflow Declarative Pipeline"]
+        raw[("raw.landing<br/>Source artifacts")]
+        silver[("silver<br/>Normalized datasets")]
+        gold[("gold<br/>Analytical dataset")]
         raw --> silver --> gold
     end
 
-    t1 -.->|extracts into| raw
-    t2 ==>|triggers run| DataFlow
+    sources --> prepare
+    prepare --> raw
+    refresh --> pipeline
 ```
 
-### Declarative pipeline
+## Responsibility boundaries
 
-The Lakeflow Declarative Pipeline is defined in `src/zugzwang/pipeline.py`.
+### Source preparation
 
-- **Role:** Owns all `Raw -> Silver -> Gold` dataset transformations and joins.
-- **Paradigm:** Declarative, distributed PySpark DataFrames (`@dp.materialized_view`).
-- **Responsibilities:**
-  - Reading a previously validated landing snapshot from `/Volumes/zugzwang_*/raw/landing/`.
-  - Deterministic normalization and analytical joins.
-  - Dependency resolution, concurrency management, and ACID Delta Lake materialization.
-  - Real-time DAG lineage and dataset monitoring.
-- **Constraints:** No driver memory collection (`toPandas()`, `collect()`), no procedural I/O scripts.
+The `prepare_sources` task runs [src/prepare_sources.py](../src/prepare_sources.py).
+It owns operations that are procedural or external to the transformation graph:
 
-A direct pipeline refresh is supported only when the configured landing
-snapshot has already passed manifest validation. The end-to-end entry point is
-the outer Lakeflow Job, which prepares and validates sources before it triggers
-the pipeline.
+- downloading the configured railway, StaDa, and DWD sources;
+- extracting the canonical files consumed by Spark;
+- validating source-specific structure and the complete candidate snapshot;
+- hashing and recording artifact provenance;
+- publishing artifacts to the landing Volume; and
+- writing `manifest.json` last as the completion marker.
 
-### Unity Catalog layout
+A valid snapshot is immutable. Reruns verify its manifest and content digests
+and then exit without replacing it. Foreign or corrupted snapshots are left in
+place for investigation. [ADR 0002](decisions/0002-ingestion-snapshot-contract.md)
+defines this contract.
 
-The bundle separates assets by responsibility while retaining one declarative
-pipeline:
+### Declarative transformation
 
-- `raw` contains the managed `landing` Volume with immutable upstream files.
-- `silver` contains normalized, reusable materialized views.
-- `gold` contains analytical datasets intended for downstream consumption.
+The `refresh_pipeline` task triggers the pipeline defined in
+[src/pipeline.py](../src/pipeline.py). The pipeline owns the deterministic
+Raw-to-Silver and Silver-to-Gold graph:
 
-The raw schema is the project's Bronze-equivalent boundary. It deliberately
-uses the more literal name `raw` because it contains source files rather than
-duplicative Bronze Delta tables. The pipeline defaults to `silver` and uses a
-fully qualified name for its Gold output, preserving a single dependency graph
-and end-to-end lineage across both schemas.
+- reading a manifest-validated snapshot from the `raw.landing` Volume;
+- normalizing source identifiers, timestamps, and missing values;
+- mapping each railway EVA independently to temperature and wind sensors;
+- joining train stops with station and hourly weather context;
+- applying Lakeflow expectations; and
+- materializing the published Silver and Gold schemas.
 
-### Orchestration job
+Reusable transformations remain ordinary PySpark functions under
+`src/zugzwang/`. This keeps source parsing, normalization, spatial mapping, and
+analytical joins testable outside the Databricks pipeline runtime.
 
-The outer orchestration job coordinates operational tasks outside the declarative transformation graph:
+## Unity Catalog layout
 
-- **Role:** Owns procedural, heterogeneous workflows.
-- **Tasks:**
-  1. `prepare_sources`: Procedural task (`spark_python_task`) responsible for automated download of monthly railway parquet releases, StaDa snapshots, and DWD meteorological archives into the Unity Catalog Volume.
-  2. `refresh_pipeline`: Pipeline task (`pipeline_task`) that triggers execution of the Lakeflow Declarative Pipeline.
+The bundle creates one catalog per target and separates datasets by
+responsibility:
 
----
+| Object | Purpose |
+| --- | --- |
+| `raw.landing` | Managed Volume containing the immutable source snapshot, retained archives, derived source files, and manifest |
+| `silver.stations` | Station attributes at usable-EVA grain |
+| `silver.weather_stations` | DWD stations eligible for temperature or wind mapping during June 2026 |
+| `silver.station_weather_mapping` | Independent nearest-temperature and nearest-wind mapping at railway-EVA grain |
+| `silver.temperature_hourly` | June temperature and humidity observations at station-hour grain |
+| `silver.wind_hourly` | June wind observations at station-hour grain |
+| `silver.train_stops` | Normalized operational events at train-stop grain |
+| `gold.train_stop_weather` | Train stops enriched with station and hourly weather context |
 
-## Roadmap
+The landing Volume is the project's Bronze-equivalent boundary. It preserves
+the source artifacts without creating Delta tables that would only duplicate
+them. Silver and Gold are materialized views managed by one triggered,
+serverless Lakeflow pipeline. [ADR 0003](decisions/0003-separate-serving-schemas.md)
+records the schema decision.
 
-### Milestone 1: Core pipeline
+## Deployment and execution
 
-*Status: Complete for the June 2026 vertical slice*
+Databricks Declarative Automation Bundles define the development and production
+targets in `databricks.yml` and the resources under `resources/`.
 
-- Land raw source files manually/statically in Unity Catalog landing Volume (`data-2026-06.parquet`, `stada_stations.json`, extracted DWD `.txt` files).
-- Validate the Lakeflow Declarative Pipeline end-to-end on Databricks Serverless compute.
-- Verify 100% join match rates and schema conformity on `gold.train_stop_weather`.
+The supported end-to-end command is:
 
-### Milestone 2: Automated ingestion
+```bash
+task run-job
+```
 
-*Status: Implemented for the fixed June 2026 snapshot; contract hardening in progress*
+The job has `max_concurrent_runs: 1`, so two source-publication runs cannot
+overlap through this entry point. A direct pipeline run is supported only when
+the configured landing snapshot already has a valid manifest and matching
+artifacts.
 
-- `prepare_sources` fetches and validates the configured upstream source data.
-- The multi-task Lakeflow Job orchestrates end-to-end runs
-  (`prepare_sources` $\to$ `refresh_pipeline`).
-- Publish immutable period snapshots using the contract in
-  [ADR 0002](decisions/0002-ingestion-snapshot-contract.md).
+For deployment instructions, see [Initial dataset setup](initial-dataset-setup.md).
+For implemented and planned milestones, see the [Project roadmap](roadmap.md).
 
-### Milestone 3: Analytical case study and monthly proof
+## Current scope boundaries
 
-*Status: Next*
+The current implementation is intentionally fixed to June 2026. It does not
+yet provide:
 
-- Publish the June delay, cancellation, coverage, and weather-context case study.
-- Complete the remaining June source-contract hardening listed in the roadmap.
-- Process a second real month before generalizing ingestion or enabling a
-  recurring schedule.
-- Measure runtime and storage before enabling recurring operation.
+- arbitrary-month processing;
+- recurring scheduling;
+- rolling retention;
+- streaming ingestion;
+- historical station-dimension management; or
+- causal or predictive modelling.
+
+These capabilities should be added only after a concrete analytical or
+operational requirement justifies them.

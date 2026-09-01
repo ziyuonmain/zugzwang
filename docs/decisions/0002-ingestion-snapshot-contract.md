@@ -4,6 +4,8 @@
 
 Accepted
 
+Implemented for the fixed June 2026 snapshot.
+
 ## Context
 
 The June 2026 vertical slice currently depends on source files prepared

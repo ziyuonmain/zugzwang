@@ -8,9 +8,10 @@ Accepted
 
 Zugzwang is an open-source railway data platform built on Databricks to explore operational performance and demonstrate production-grade data engineering.
 
-To create a realistic, technically meaningful integration problem within the initial ~30-hour development budget, the platform requires:
+To create a useful multi-domain analysis within the initial ~30-hour
+development budget, the platform requires:
 
-1. A high-velocity operational fact stream of real-world railway timetable events.
+1. A large monthly operational dataset of real-world railway timetable events.
 2. A conforming railway station dimension providing spatial and administrative hierarchy.
 3. An independent second analytical domain that introduces multi-domain spatio-temporal reconciliation without artificial complexity.
 
@@ -19,7 +20,9 @@ We evaluated two architectural candidates:
 - **Option A:** Operational railway events + Station master data.
 - **Option B:** Operational railway events + Station master data + DWD hourly meteorological observations.
 
-Option A represents a standard star-schema join on a single surrogate key (`eva`), which does not adequately justify distributed data processing. Option B introduces multi-domain data fusion across two independent high-velocity event streams sharing no common business key.
+Option A represents a direct join on the source-provided EVA identifier. Option
+B adds a separate hourly observation dataset with no shared station identifier,
+requiring explicit spatial and temporal reconciliation.
 
 ## Decision
 
@@ -48,9 +51,13 @@ Hands-on profiling against real source datasets yielded the following verified f
 
 ### Positive
 
-- **Justified Spark & Databricks Usage:** Ingesting and reconciling 14.75M train events with multi-stream sensor observations justifies distributed joins, temporal windowing, and Delta Lake optimization.
-- **High Spatial Fidelity:** Independent parameter mappings avoid distance degradation for dense networks (temperature) while accommodating sparser networks (wind).
-- **Decoupled Architecture:** Precomputing the proximity bridge table isolates geospatial calculations from high-velocity operational fact pipelines.
+- **Appropriate distributed processing:** Reconciling 14.75 million train-stop
+  records with station and hourly sensor observations benefits from distributed
+  normalization and joins.
+- **Independent sensor selection:** Parameter-specific mappings avoid the
+  measured distance penalty of forcing temperature and wind onto one sensor.
+- **Decoupled Architecture:** Precomputing the proximity bridge table isolates
+  geospatial calculations from the operational fact transformation.
 
 ### Negative and trade-offs
 

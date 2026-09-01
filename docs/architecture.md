@@ -43,9 +43,9 @@ The Lakeflow Declarative Pipeline is defined in `src/zugzwang/pipeline.py`.
 - **Constraints:** No driver memory collection (`toPandas()`, `collect()`), no procedural I/O scripts.
 
 A direct pipeline refresh is supported only when the configured landing
-snapshot has already passed manifest validation. The planned end-to-end entry
-point is the outer Lakeflow Job, which prepares and validates sources before it
-triggers the pipeline.
+snapshot has already passed manifest validation. The end-to-end entry point is
+the outer Lakeflow Job, which prepares and validates sources before it triggers
+the pipeline.
 
 ### Unity Catalog layout
 
@@ -67,7 +67,7 @@ and end-to-end lineage across both schemas.
 The outer orchestration job coordinates operational tasks outside the declarative transformation graph:
 
 - **Role:** Owns procedural, heterogeneous workflows.
-- **Planned Tasks:**
+- **Tasks:**
   1. `prepare_sources`: Procedural task (`spark_python_task`) responsible for automated download of monthly railway parquet releases, StaDa snapshots, and DWD meteorological archives into the Unity Catalog Volume.
   2. `refresh_pipeline`: Pipeline task (`pipeline_task`) that triggers execution of the Lakeflow Declarative Pipeline.
 
@@ -77,7 +77,7 @@ The outer orchestration job coordinates operational tasks outside the declarativ
 
 ### Milestone 1: Core pipeline
 
-*Status: Current*
+*Status: Complete for the June 2026 vertical slice*
 
 - Land raw source files manually/statically in Unity Catalog landing Volume (`data-2026-06.parquet`, `stada_stations.json`, extracted DWD `.txt` files).
 - Validate the Lakeflow Declarative Pipeline end-to-end on Databricks Serverless compute.
@@ -85,9 +85,20 @@ The outer orchestration job coordinates operational tasks outside the declarativ
 
 ### Milestone 2: Automated ingestion
 
-*Status: Next*
+*Status: Implemented for the fixed June 2026 snapshot; contract hardening in progress*
 
-- Implement `prepare_sources` task to fetch upstream source data automatically.
-- Configure and deploy the multi-task Lakeflow Job in `databricks.yml` to orchestrate end-to-end runs (`prepare_sources` $\to$ `refresh_pipeline`).
+- `prepare_sources` fetches and validates the configured upstream source data.
+- The multi-task Lakeflow Job orchestrates end-to-end runs
+  (`prepare_sources` $\to$ `refresh_pipeline`).
 - Publish immutable period snapshots using the contract in
   [ADR 0002](decisions/0002-ingestion-snapshot-contract.md).
+
+### Milestone 3: Analytical case study and monthly proof
+
+*Status: Next*
+
+- Publish the June delay, cancellation, coverage, and weather-context case study.
+- Complete the remaining June source-contract hardening listed in the roadmap.
+- Process a second real month before generalizing ingestion or enabling a
+  recurring schedule.
+- Measure runtime and storage before enabling recurring operation.

@@ -36,12 +36,16 @@ June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundle
 ## Execution model and responsibility split
 
 - **Lakeflow Declarative Pipeline (`src/pipeline.py`):** Owns all `Raw -> Silver -> Gold` dataset transformations and joins using `@dp.materialized_view`.
-- **Lakeflow Job (Planned Milestone 2):** Will own procedural source acquisition/landing (`prepare_sources`) and trigger the pipeline via `pipeline_task` (`refresh_pipeline`).
+- **Lakeflow Job:** Owns procedural source acquisition and landing
+  (`prepare_sources`) and triggers the pipeline via `pipeline_task`
+  (`refresh_pipeline`) for the fixed June snapshot.
 
 ## Databricks resources
 
 - Declarative Automation Bundle: `databricks.yml` configured for `dev` target with Serverless compute.
 - Lakeflow Pipeline: `zugzwang_june2026` defaults to `zugzwang_dev.silver` and publishes its Gold mart to `zugzwang_dev.gold`.
+- Lakeflow Job: `zugzwang_pipeline_job` runs source preparation followed by the
+  pipeline refresh.
 
 ## Important decisions
 

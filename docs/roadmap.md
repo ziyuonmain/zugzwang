@@ -14,12 +14,14 @@ not considered implemented until it has processed real source data successfully.
 - June 2026 raw sources have been transformed into Silver and Gold materialized
   views on Databricks Serverless.
 - Automated source preparation exists for the fixed June snapshot.
+- The deployed Lakeflow Job runs source preparation before the declarative
+  pipeline refresh.
 - Source manifests record landed artifact identity and integrity.
 - The analytical case study and recurring monthly operation are not complete.
 
 ## Delivery sequence
 
-### 1. Publish the June case study
+### 1. Publish the June case study — next
 
 Establish the first useful analytical result before broadening the platform:
 
@@ -29,7 +31,7 @@ Establish the first useful analytical result before broadening the platform:
 - weather-stratified comparisons with quality and sensor-distance caveats;
 - one reproducible notebook or concise SQL dashboard.
 
-### 2. Harden the June contracts
+### 2. Harden the June contracts — in progress
 
 - Validate complete consumer schemas and target-period coverage.
 - Verify copied landing artifacts before committing the manifest.
@@ -38,18 +40,19 @@ Establish the first useful analytical result before broadening the platform:
 - Limit weather facts to the intended analytical period.
 - Run the complete unit and Spark transformation suite in the standard check.
 
-### 3. Process a second real month
+### 3. Process a second real month — planned
 
 - Introduce one validated monthly snapshot specification.
 - Move landing data to period-scoped snapshot directories.
 - Parameterize ingestion paths and transformation date bounds together.
 - Add temporal snapshot keys to facts and reference mappings.
 - Compare schema, coverage, join rates, runtime, and storage with June.
+- Record job and pipeline run durations before enabling recurring operation.
 
 This second month is the test for the monthly abstraction. The project should
 not build generic source plugins or enable a schedule before this succeeds.
 
-### 4. Maintain a rolling year
+### 4. Maintain a rolling year — planned
 
 - Make monthly replacement idempotent.
 - Retain twelve months of Silver and Gold analytical data.

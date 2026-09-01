@@ -39,8 +39,9 @@ distance and quality attributes needed to interpret the resulting joins.
 | Area | Status |
 | --- | --- |
 | June 2026 Silver and Gold pipeline | Implemented and materialized on Databricks Serverless |
+| End-to-end Lakeflow orchestration | Implemented for the fixed June snapshot |
 | June analytical case study | Next deliverable |
-| Automated June source preparation | Implemented; validation hardening in progress |
+| June source-contract hardening | In progress |
 | Generic monthly processing | Planned after the June case study and a second real month |
 | Rolling twelve-month retention | Planned |
 

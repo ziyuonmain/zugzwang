@@ -32,6 +32,21 @@ def test_local_to_utc_and_truncation(spark: SparkSession):
     assert rows[1]['utc_hour'] == datetime(2026, 6, 15, 12, 0, 0)
 
 
+def test_local_nanoseconds_to_utc(spark: SparkSession):
+    """Tests the physical nanosecond representation used by source Parquet."""
+    schema = StructType([StructField('time_ns', LongType(), False)])
+    data = [
+        (1780272000000000000,),  # 2026-06-01 00:00:00 Europe/Berlin
+        (1780271640000000000,),  # 2026-05-31 23:54:00 Europe/Berlin
+    ]
+    df = spark.createDataFrame(data, schema=schema)
+
+    rows = df.select(local_to_utc_timestamp('time_ns').alias('utc_time')).collect()
+
+    assert rows[0]['utc_time'] == datetime(2026, 5, 31, 22, 0, 0)
+    assert rows[1]['utc_time'] == datetime(2026, 5, 31, 21, 54, 0)
+
+
 def test_parse_dwd_mess_datum_to_utc(spark: SparkSession):
     """Tests parsing DWD integer YYYYMMDDHH into a UTC timestamp."""
     schema = StructType([StructField('mess_datum', LongType(), False)])

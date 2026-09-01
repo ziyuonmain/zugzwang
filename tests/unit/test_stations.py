@@ -1,55 +1,63 @@
 """Unit tests for StaDa station master data transformation."""
 
 import json
+from pathlib import Path
 
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StringType, StructField, StructType
 
-from zugzwang.transformations.stations import transform_stations
+from zugzwang.transformations.stations import (
+    read_stada_json_array,
+    transform_stations,
+)
+
+
+def _station_records() -> list[dict]:
+    """Returns representative StaDa station records."""
+    return [
+        {
+            'number': 220,
+            'name': 'Augsburg Hbf',
+            'category': 1,
+            'priceCategory': 2,
+            'federalState': 'Bayern',
+            'regionalbereich': {'name': 'RB Süd'},
+            'ril100Identifiers': [{'rilIdentifier': 'MA', 'isMain': True}],
+            'evaNumbers': [
+                {
+                    'number': 8000013,
+                    'isMain': True,
+                    'geographicCoordinates': {'coordinates': [10.88557, 48.365441]},
+                }
+            ],
+        },
+        {
+            'number': 528,
+            'name': 'Berlin Gesundbrunnen',
+            'category': 1,
+            'priceCategory': 1,
+            'federalState': 'Berlin',
+            'regionalbereich': {'name': 'RB Ost'},
+            'ril100Identifiers': [{'rilIdentifier': 'BGB', 'isMain': True}],
+            'evaNumbers': [
+                {
+                    'number': 8011102,
+                    'isMain': True,
+                    'geographicCoordinates': {'coordinates': [13.38851, 52.54896]},
+                },
+                {
+                    'number': 8089015,
+                    'isMain': False,
+                    'geographicCoordinates': {'coordinates': [13.38851, 52.54896]},
+                },
+            ],
+        },
+    ]
 
 
 def test_transform_stations_from_raw_json_strings(spark: SparkSession):
     """Tests unnesting multi-EVA station JSON structures and extracting coordinates."""
-    # Mock StaDa station JSON objects
-    station_augsburg = {
-        'number': 220,
-        'name': 'Augsburg Hbf',
-        'category': 1,
-        'priceCategory': 2,
-        'federalState': 'Bayern',
-        'regionalbereich': {'name': 'RB Süd'},
-        'ril100Identifiers': [{'rilIdentifier': 'MA', 'isMain': True}],
-        'evaNumbers': [
-            {
-                'number': 8000013,
-                'isMain': True,
-                'geographicCoordinates': {'coordinates': [10.88557, 48.365441]},
-            }
-        ],
-    }
-
-    # Station with 2 EVAs (e.g. main and sub-station code)
-    station_berlin = {
-        'number': 528,
-        'name': 'Berlin Gesundbrunnen',
-        'category': 1,
-        'priceCategory': 1,
-        'federalState': 'Berlin',
-        'regionalbereich': {'name': 'RB Ost'},
-        'ril100Identifiers': [{'rilIdentifier': 'BGB', 'isMain': True}],
-        'evaNumbers': [
-            {
-                'number': 8011102,
-                'isMain': True,
-                'geographicCoordinates': {'coordinates': [13.38851, 52.54896]},
-            },
-            {
-                'number': 8089015,
-                'isMain': False,
-                'geographicCoordinates': {'coordinates': [13.38851, 52.54896]},
-            },
-        ],
-    }
+    station_augsburg, station_berlin = _station_records()
 
     schema = StructType([StructField('value', StringType(), False)])
     data = [(json.dumps(station_augsburg),), (json.dumps(station_berlin),)]
@@ -79,3 +87,17 @@ def test_transform_stations_from_raw_json_strings(spark: SparkSession):
     bgb_sub = rows['08089015']
     assert bgb_sub['station_name'] == 'Berlin Gesundbrunnen'
     assert bgb_sub['is_main_eva'] is False
+
+
+def test_read_multiline_stada_json_array(spark: SparkSession, tmp_path: Path):
+    """Tests the consolidated JSON-array contract used by the pipeline."""
+    source = tmp_path / 'stada_stations.json'
+    source.write_text(
+        json.dumps(_station_records(), ensure_ascii=False, indent=2),
+        encoding='utf-8',
+    )
+
+    raw_df = read_stada_json_array(spark, str(source))
+    rows = {row['eva']: row for row in transform_stations(raw_df).collect()}
+
+    assert set(rows) == {'08000013', '08011102', '08089015'}

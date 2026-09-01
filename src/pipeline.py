@@ -12,14 +12,14 @@ from zugzwang.transformations.railway import (
     RAILWAY_RAW_SCHEMA,
     transform_train_stops,
 )
-from zugzwang.transformations.stations import transform_stations
+from zugzwang.transformations.stations import read_stada_json_array, transform_stations
 from zugzwang.transformations.weather import (
     build_weather_stations,
     transform_temperature_hourly,
     transform_wind_hourly,
 )
 
-# Lakeflow dynamically attaches .read() to pyspark.pipelines at runtime
+# Lakeflow dynamically attaches decorators (.expect) and methods (.read) at runtime
 dp_dynamic = cast(Any, dp)
 
 # Initialize paths from volume landing location
@@ -31,9 +31,13 @@ spark = SparkSession.getActiveSession() or SparkSession.builder.getOrCreate()
     name='silver_stations',
     comment='Conforming railway station master dimension parsed from StaDa snapshot.',
 )
+@dp_dynamic.expect('valid_eva', 'eva IS NOT NULL')
+@dp_dynamic.expect(
+    'valid_coordinates', 'latitude IS NOT NULL AND longitude IS NOT NULL'
+)
 def silver_stations():
     """Materialized view for railway stations."""
-    raw_df = spark.read.text(paths.stada_json_path)
+    raw_df = read_stada_json_array(spark, paths.stada_json_path)
     return transform_stations(raw_df)
 
 
@@ -41,6 +45,7 @@ def silver_stations():
     name='silver_weather_stations',
     comment='Active June 2026 DWD meteorological observation stations.',
 )
+@dp_dynamic.expect('valid_dwd_station_id', 'dwd_station_id IS NOT NULL')
 def silver_weather_stations():
     """Materialized view for DWD weather stations."""
     tu_meta = spark.read.text(paths.dwd_tu_meta_path)
@@ -52,6 +57,7 @@ def silver_weather_stations():
     name='silver_station_weather_mapping',
     comment='Parameter-specific spatial mapping from railway stations to nearest DWD sensors.',
 )
+@dp_dynamic.expect('valid_mapping_eva', 'eva IS NOT NULL')
 def silver_station_weather_mapping():
     """Materialized view mapping stations to nearest temperature and wind sensors."""
     stations_df = dp_dynamic.read('silver_stations')
@@ -63,6 +69,8 @@ def silver_station_weather_mapping():
     name='silver_temperature_hourly',
     comment='Normalized hourly air temperature and humidity observations from DWD CDC.',
 )
+@dp_dynamic.expect('valid_tu_station_id', 'dwd_station_id IS NOT NULL')
+@dp_dynamic.expect('valid_tu_hour', 'observation_hour_utc IS NOT NULL')
 def silver_temperature_hourly():
     """Materialized view for hourly temperature observations."""
     raw_tu = (
@@ -77,6 +85,8 @@ def silver_temperature_hourly():
     name='silver_wind_hourly',
     comment='Normalized hourly wind speed and direction observations from DWD CDC.',
 )
+@dp_dynamic.expect('valid_ff_station_id', 'dwd_station_id IS NOT NULL')
+@dp_dynamic.expect('valid_ff_hour', 'observation_hour_utc IS NOT NULL')
 def silver_wind_hourly():
     """Materialized view for hourly wind observations."""
     raw_ff = (
@@ -91,6 +101,9 @@ def silver_wind_hourly():
     name='silver_train_stops',
     comment='Normalized June 2026 operational timetable train stop events.',
 )
+@dp_dynamic.expect('valid_stop_id', 'id IS NOT NULL')
+@dp_dynamic.expect('valid_eva', 'eva IS NOT NULL')
+@dp_dynamic.expect('valid_event_hour', 'event_hour_utc IS NOT NULL')
 def silver_train_stops():
     """Materialized view for operational train stop events."""
     raw_parquet = spark.read.schema(RAILWAY_RAW_SCHEMA).parquet(
@@ -103,6 +116,9 @@ def silver_train_stops():
     name='gold_train_stop_weather',
     comment='Enriched analytical dataset combining stops, station metadata, and weather context.',
 )
+@dp_dynamic.expect('valid_gold_id', 'id IS NOT NULL')
+@dp_dynamic.expect('valid_gold_eva', 'eva IS NOT NULL')
+@dp_dynamic.expect('valid_gold_hour', 'event_hour_utc IS NOT NULL')
 def gold_train_stop_weather():
     """Materialized view for the final enriched multi-domain analytical dataset."""
     return build_gold_train_stop_weather(

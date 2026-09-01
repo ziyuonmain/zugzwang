@@ -1,0 +1,25 @@
+resources:
+  jobs:
+    zugzwang_pipeline_job:
+      name: "Zugzwang End-to-End Orchestration Job"
+      max_concurrent_runs: 1
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
+            dependencies:
+              - pyarrow>=14.0.0
+      tasks:
+        - task_key: prepare_sources
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/prepare_sources.py
+            parameters:
+              - "--volume-base-path"
+              - "/Volumes/${var.catalog}/${resources.schemas.raw.name}/${resources.volumes.landing.name}"
+        - task_key: refresh_pipeline
+          depends_on:
+            - task_key: prepare_sources
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.zugzwang_june2026.id}
+

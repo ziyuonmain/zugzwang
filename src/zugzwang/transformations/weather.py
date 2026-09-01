@@ -101,13 +101,20 @@ def build_weather_stations(
     )
 
 
-def transform_temperature_hourly(raw_tu_df: DataFrame) -> DataFrame:
+def transform_temperature_hourly(
+    raw_tu_df: DataFrame,
+    target_start_ts: str = '2026-06-01 00:00:00',
+    target_end_ts: str = '2026-07-01 00:00:00',
+) -> DataFrame:
     """Transforms raw DWD hourly air temperature observations into silver_temperature_hourly.
 
-    Coerces sentinel values (-999.0) to NULL and standardizes UTC timestamp keys.
+    Coerces sentinel values (-999.0) to NULL, standardizes UTC timestamp keys,
+    and limits observations strictly to the target month.
 
     Args:
         raw_tu_df: DataFrame parsed from DWD TU observation semicolon files.
+        target_start_ts: Inclusive UTC start timestamp (defaults to '2026-06-01 00:00:00').
+        target_end_ts: Exclusive UTC end timestamp (defaults to '2026-07-01 00:00:00').
 
     Returns:
         DataFrame conforming to silver_temperature_hourly schema.
@@ -135,16 +142,27 @@ def transform_temperature_hourly(raw_tu_df: DataFrame) -> DataFrame:
             .alias('qn_9'),
         )
         .filter(F.col('observation_hour_utc').isNotNull())
+        .filter(
+            (F.col('observation_hour_utc') >= F.to_timestamp(F.lit(target_start_ts)))
+            & (F.col('observation_hour_utc') < F.to_timestamp(F.lit(target_end_ts)))
+        )
     )
 
 
-def transform_wind_hourly(raw_ff_df: DataFrame) -> DataFrame:
+def transform_wind_hourly(
+    raw_ff_df: DataFrame,
+    target_start_ts: str = '2026-06-01 00:00:00',
+    target_end_ts: str = '2026-07-01 00:00:00',
+) -> DataFrame:
     """Transforms raw DWD hourly wind observations into silver_wind_hourly.
 
-    Coerces sentinel values (-999.0) to NULL and standardizes UTC timestamp keys.
+    Coerces sentinel values (-999.0) to NULL, standardizes UTC timestamp keys,
+    and limits observations strictly to the target month.
 
     Args:
         raw_ff_df: DataFrame parsed from DWD FF observation semicolon files.
+        target_start_ts: Inclusive UTC start timestamp (defaults to '2026-06-01 00:00:00').
+        target_end_ts: Exclusive UTC end timestamp (defaults to '2026-07-01 00:00:00').
 
     Returns:
         DataFrame conforming to silver_wind_hourly schema.
@@ -171,4 +189,8 @@ def transform_wind_hourly(raw_ff_df: DataFrame) -> DataFrame:
             .alias('qn_3'),
         )
         .filter(F.col('observation_hour_utc').isNotNull())
+        .filter(
+            (F.col('observation_hour_utc') >= F.to_timestamp(F.lit(target_start_ts)))
+            & (F.col('observation_hour_utc') < F.to_timestamp(F.lit(target_end_ts)))
+        )
     )

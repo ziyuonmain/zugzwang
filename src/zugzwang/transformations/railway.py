@@ -14,8 +14,9 @@ from pyspark.sql.types import (
 from zugzwang.time import local_to_utc_timestamp, truncate_to_utc_hour
 
 # Explicit schema contract for raw railway operational parquet files.
-# Nanosecond timestamp columns are mapped as LongType to prevent PARQUET_TYPE_ILLEGAL
-# during schema inference, in accordance with official Databricks documentation.
+# Timezone-naive nanosecond timestamp columns are mapped as LongType to prevent
+# PARQUET_TYPE_ILLEGAL during schema inference. The physical integers still encode
+# Europe/Berlin local wall-clock values and are normalized in transform_train_stops().
 RAILWAY_RAW_SCHEMA = StructType(
     [
         StructField('station_name', StringType(), True),
@@ -52,6 +53,10 @@ def transform_train_stops(raw_parquet_df: DataFrame) -> DataFrame:
     Returns:
         DataFrame conforming to silver_train_stops schema.
     """
+    local_ts_col = F.when(
+        F.col('time').cast('string').rlike('^[0-9]{14,}$'),
+        F.timestamp_seconds((F.col('time') / 1_000_000_000).cast('long')),
+    ).otherwise(F.col('time').cast('timestamp'))
     utc_time_col = local_to_utc_timestamp(F.col('time'), 'Europe/Berlin')
 
     return (
@@ -73,7 +78,8 @@ def transform_train_stops(raw_parquet_df: DataFrame) -> DataFrame:
             F.coalesce(F.col('departure_is_canceled'), F.lit(False)).alias(
                 'departure_is_canceled'
             ),
-            F.col('time').alias('event_time_local'),
+            local_ts_col.alias('event_time_local'),
+            F.col('time').alias('event_time_local_nanos'),
             utc_time_col.alias('event_time_utc'),
             truncate_to_utc_hour(utc_time_col).alias('event_hour_utc'),
             local_to_utc_timestamp(

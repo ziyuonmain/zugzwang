@@ -1,7 +1,7 @@
 """StaDa railway station master data transformation into silver_stations."""
 
 import pyspark.sql.functions as F
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import (
     ArrayType,
     BooleanType,
@@ -53,6 +53,21 @@ STADA_STATION_SCHEMA = StructType(
         StructField('ril100Identifiers', ArrayType(RIL100_SCHEMA), True),
     ]
 )
+
+
+def read_stada_json_array(spark: SparkSession, path: str) -> DataFrame:
+    """Reads the consolidated StaDa snapshot stored as a multiline JSON array.
+
+    Args:
+        spark: Active Spark session.
+        path: Local or Unity Catalog Volume path to the StaDa JSON file.
+
+    Returns:
+        DataFrame containing one parsed StaDa station object per row.
+    """
+    return (
+        spark.read.option('multiLine', 'true').schema(STADA_STATION_SCHEMA).json(path)
+    )
 
 
 def transform_stations(raw_df: DataFrame) -> DataFrame:

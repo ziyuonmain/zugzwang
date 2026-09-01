@@ -9,8 +9,8 @@ def local_to_utc_timestamp(
 ) -> Column:
     """Converts local wall-clock timestamp into a UTC timestamp.
 
-    Handles both TimestampType columns and nanosecond integer epoch timestamps
-    from Parquet files.
+    Handles both TimestampType columns and the physical nanosecond integers used
+    by Parquet to encode timezone-naive local timestamps.
 
     Args:
         col_name: Column name or PySpark Column representing local time.
@@ -21,7 +21,8 @@ def local_to_utc_timestamp(
     """
     col = F.col(col_name) if isinstance(col_name, str) else col_name
 
-    # If column contains integer nanoseconds (>= 14 digits), convert to seconds timestamp
+    # The source Parquet marks these values as timezone-naive (isAdjustedToUTC=false).
+    # Interpret the physical integer as a local wall-clock value before converting it.
     local_ts = F.when(
         col.cast('string').rlike('^[0-9]{14,}$'),
         F.timestamp_seconds((col / 1_000_000_000).cast('long')),

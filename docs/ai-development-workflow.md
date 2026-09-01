@@ -1,16 +1,23 @@
 # AI-assisted development workflow
 
-This document describes how I use AI tooling while developing Zugzwang.
+This document describes how AI tooling is used while developing Zugzwang.
 
-The goal is to use agents aggressively for implementation and research while keeping architectural decisions, validation, and commit history deliberate and understandable.
+The goal is to use AI assistance where it improves exploration,
+implementation, and review while keeping human decisions, source evidence,
+verification, and commit history explicit.
+
+The maintainer remains responsible for accepting architectural, data-semantic,
+and implementation decisions. Passing tests demonstrate tested behavior; they
+do not validate undocumented source semantics, which require source inspection
+or primary documentation.
 
 ## Tool responsibilities
 
-### Antigravity IDE
+### Implementation agents
 
-Primary implementation environment.
+Antigravity and OpenAI Codex are used as implementation environments.
 
-Use Antigravity for:
+Use implementation agents for:
 
 - repository exploration
 - research
@@ -23,7 +30,11 @@ Use Antigravity for:
 - local verification
 - preparing commits
 
-Antigravity may make substantial local changes before they are committed.
+Their responsibilities may overlap. The important separation is between
+implementation and independent challenge, not between tool vendors.
+
+Implementation agents may make substantial, coherent local changes before they
+are committed.
 
 ### Independent reviewer
 
@@ -41,7 +52,9 @@ The reviewer should challenge:
 - scope creep
 - whether something would withstand senior-level technical discussion
 
-The reviewer should not simply continue Antigravity's reasoning.
+The reviewer should not simply continue the implementation agent's reasoning.
+Use a separate model, agent, or fresh review context that can challenge the
+proposal independently.
 
 ---
 
@@ -69,7 +82,8 @@ A good `/design` request should normally be short because project rules, skills,
 Example:
 
 ```text
-/design Add reproducible source acquisition for the June 2026 vertical slice.
+/design Generalize the validated June pipeline to process a second monthly
+snapshot without introducing a generic ingestion framework.
 ```
 
 The design workflow should:
@@ -98,13 +112,25 @@ Use independent review when:
 - source semantics are uncertain
 - the proposed solution seems overengineered
 
-For long Antigravity sessions, run:
+For long implementation sessions, run:
 
 ```text
 /handoff
 ```
 
 and give the resulting handoff artifact to the independent reviewer.
+
+Challenge the handoff with:
+
+```text
+/challenge .review/handoff.md
+```
+
+Then evaluate every finding rather than accepting it automatically:
+
+```text
+/respond-to-challenge
+```
 
 A handoff should distinguish:
 
@@ -139,7 +165,7 @@ Use high effort only when implementation reveals:
 - architectural conflicts
 - difficult debugging
 
-Allow Antigravity to make coherent changes across multiple files.
+Allow the implementation agent to make coherent changes across multiple files.
 
 Do not force one AI task to equal one Git commit.
 
@@ -158,6 +184,8 @@ Verification should run only checks that actually apply, such as:
 ```text
 uv run pytest
 uv run ruff check .
+uv run ruff format --check .
+uv run ty check
 databricks bundle validate -t dev
 ```
 
@@ -183,7 +211,7 @@ After implementation:
 /review
 ```
 
-Antigravity should review the current diff as a senior engineer.
+The reviewing agent should inspect the current diff as a senior engineer.
 
 Prioritize:
 
@@ -209,7 +237,8 @@ and ask for independent review.
 
 ## Git and commit workflow
 
-Antigravity may make multiple related changes in the working tree before commits are created.
+An implementation agent may make multiple related changes in the working tree
+before commits are created.
 
 Do not automatically commit after each AI task.
 
@@ -288,9 +317,8 @@ Skills contain specialized knowledge or procedures.
 
 Examples:
 
-- railway-data research
-- Databricks development
-- architecture review
+- rail-data-research
+- architecture-review
 
 Skills should normally activate automatically from the task context.
 
@@ -304,9 +332,11 @@ Primary workflows:
 
 ```text
 /design
+/handoff
+/challenge
+/respond-to-challenge
 /verify
 /review
-/handoff
 /prep-commits
 ```
 
@@ -352,9 +382,13 @@ A healthy workflow should increasingly look like:
 
 ```mermaid
 flowchart TD
-    design["/design feature"] --> challenge{"Challenge if<br/>consequential"}
-    challenge -- Needs revision --> design
-    challenge -- Aligned --> implement["Implement"]
+    design["/design feature"] --> handoff{"Consequential?"}
+    handoff -- Yes --> persist["/handoff"]
+    persist --> challenge["/challenge"]
+    challenge --> respond["/respond-to-challenge"]
+    respond -- Revise --> design
+    respond -- Aligned --> implement["Implement"]
+    handoff -- No --> implement
     implement --> verify["/verify"]
     verify --> review["/review"]
     review -- Fixes required --> implement
@@ -362,6 +396,11 @@ flowchart TD
     prep --> commit["Commit"]
 ```
 
-The repository, ADRs, rules, and tests are the durable project memory.
+The repository, ADRs, rules, committed documentation, and tests are the durable
+project memory.
+
+The `.review/` directory is ignored by Git. Handoffs, challenges, and
+challenge responses are temporary working artifacts. Accepted conclusions must
+be transferred into code, tests, ADRs, rules, or committed documentation.
 
 Chat history is not.

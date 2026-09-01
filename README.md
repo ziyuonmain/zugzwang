@@ -72,13 +72,17 @@ locally.
 
 | Dataset | Grain |
 | --- | --- |
-| `silver_stations` | One usable station EVA |
-| `silver_weather_stations` | One active DWD sensor |
-| `silver_station_weather_mapping` | One railway EVA with independent nearest temperature and wind sensors |
-| `silver_temperature_hourly` | One temperature sensor-hour |
-| `silver_wind_hourly` | One wind sensor-hour |
-| `silver_train_stops` | One operational train stop |
-| `gold_train_stop_weather` | One enriched operational train stop |
+| `silver.stations` | One usable station EVA |
+| `silver.weather_stations` | One active DWD sensor |
+| `silver.station_weather_mapping` | One railway EVA with independent nearest temperature and wind sensors |
+| `silver.temperature_hourly` | One temperature sensor-hour |
+| `silver.wind_hourly` | One wind sensor-hour |
+| `silver.train_stops` | One operational train stop |
+| `gold.train_stop_weather` | One enriched operational train stop |
+
+Immutable source artifacts remain in the `raw.landing` Volume, which serves as
+the Bronze-equivalent boundary without duplicating the files into Bronze
+tables.
 
 For design details and source limitations:
 
@@ -87,18 +91,15 @@ For design details and source limitations:
 - [Roadmap and retention](docs/roadmap.md)
 - [ADR 0001: Source selection and weather integration](docs/decisions/0001-source-selection-and-weather-integration.md)
 - [ADR 0002: Ingestion snapshot contract](docs/decisions/0002-ingestion-snapshot-contract.md)
+- [ADR 0003: Separate Silver and Gold serving schemas](docs/decisions/0003-separate-serving-schemas.md)
 
-## Technology
+## Build with
 
 - Python 3.12 and PySpark
 - Databricks Lakeflow Declarative Pipelines and Jobs
 - Delta Lake and Unity Catalog
 - Databricks Declarative Automation Bundles
-- `uv`, pytest, Ruff, and `ty`
-
-Databricks is the execution and governance platform, not the purpose of the
-project. The analytical questions and source contracts determine the
-architecture.
+- uv, pytest, Ruff, ty, and Task
 
 ## Getting started
 
@@ -116,11 +117,12 @@ architecture.
 git clone https://github.com/ziyuonmain/zugzwang.git
 cd zugzwang
 uv sync
-uv run pytest tests/unit
-uv run ty check
-uv run ruff check .
-uv run ruff format --check .
+task check
 ```
+
+`task check` runs linting, type checks, unit tests, and strict validation of the
+Silver and Gold table definitions under `metadata/`. Use `task metadata:check`
+to validate that metadata alone.
 
 ### Databricks deployment
 

@@ -1,0 +1,83 @@
+# https://taskfile.dev
+version: '3'
+
+tasks:
+  default:
+    desc: List all available tasks
+    cmds:
+      - task --list
+    silent: true
+
+  # =========================================================================
+  # Code Quality and Testing
+  # =========================================================================
+
+  check:
+    desc: Run all local verifications (linter, type checker, and unit tests)
+    cmds:
+      - task: lint
+      - task: test
+
+  test:
+    desc: Run pytest unit test suite
+    cmds:
+      - uv run pytest tests/unit -v
+
+  lint:
+    desc: Run ruff linter, formatting checks, and type checks
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+      - uv run ty check
+
+  format:
+    desc: Automatically format code and fix auto-fixable lint issues
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+
+  # =========================================================================
+  # Local Ingestion
+  # =========================================================================
+
+  prepare-local:
+    desc: Execute source preparation locally targeting a temporary landing path
+    vars:
+      LANDING_PATH: '{{.LANDING_PATH | default "/tmp/zugzwang-landing-test"}}'
+    cmds:
+      - uv run python src/prepare_sources.py --volume-base-path {{.LANDING_PATH}}
+
+  # =========================================================================
+  # Databricks Asset Bundle Operations
+  # =========================================================================
+
+  validate:
+    desc: Validate Databricks Asset Bundle configuration across all targets (dev & prod)
+    cmds:
+      - databricks bundle validate -t dev
+      - databricks bundle validate -t prod
+
+  validate:dev:
+    desc: Validate Databricks Asset Bundle configuration for dev target only
+    cmds:
+      - databricks bundle validate -t dev
+
+  validate:prod:
+    desc: Validate Databricks Asset Bundle configuration for prod target only
+    cmds:
+      - databricks bundle validate -t prod
+
+  deploy:
+    desc: Deploy Databricks Asset Bundle resources to dev target
+    cmds:
+      - databricks bundle deploy -t dev
+
+  run-job:
+    desc: Execute the end-to-end Lakeflow Job (prepare_sources -> refresh_pipeline)
+    cmds:
+      - databricks bundle run -t dev zugzwang_pipeline_job
+
+  run-pipeline:
+    desc: Execute only the declarative Lakeflow pipeline (requires validated landing data)
+    cmds:
+      - databricks bundle run -t dev zugzwang_june2026

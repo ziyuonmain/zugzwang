@@ -7,6 +7,7 @@ from pyspark.sql import SparkSession
 
 from zugzwang.config import get_volume_paths
 from zugzwang.spatial import build_station_weather_mapping
+from zugzwang.table_contract import load_table_contracts
 from zugzwang.transformations.gold import build_gold_train_stop_weather
 from zugzwang.transformations.railway import (
     RAILWAY_RAW_SCHEMA,
@@ -25,28 +26,35 @@ dp_dynamic = cast(Any, dp)
 # Initialize paths from volume landing location
 paths = get_volume_paths()
 spark = SparkSession.getActiveSession() or SparkSession.builder.getOrCreate()
+contracts = load_table_contracts()
 
 
 @dp.materialized_view(
-    name='silver_stations',
-    comment='Conforming railway station master dimension parsed from StaDa snapshot.',
+    name=contracts['stations'].published_name,
+    comment=contracts['stations'].description,
+    schema=contracts['stations'].schema_ddl,
 )
-@dp_dynamic.expect('valid_eva', 'eva IS NOT NULL')
+@dp_dynamic.expect('valid_eva', "eva RLIKE '^[0-9]{8}$'")
 @dp_dynamic.expect(
-    'valid_coordinates', 'latitude IS NOT NULL AND longitude IS NOT NULL'
+    'valid_coordinates',
+    'latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180',
 )
-def silver_stations():
+def stations():
     """Materialized view for railway stations."""
     raw_df = read_stada_json_array(spark, paths.stada_json_path)
     return transform_stations(raw_df)
 
 
 @dp.materialized_view(
-    name='silver_weather_stations',
-    comment='Active June 2026 DWD meteorological observation stations.',
+    name=contracts['weather_stations'].published_name,
+    comment=contracts['weather_stations'].description,
+    schema=contracts['weather_stations'].schema_ddl,
 )
-@dp_dynamic.expect('valid_dwd_station_id', 'dwd_station_id IS NOT NULL')
-def silver_weather_stations():
+@dp_dynamic.expect('valid_dwd_station_id', "dwd_station_id RLIKE '^[0-9]{5}$'")
+@dp_dynamic.expect(
+    'has_observation_capability', 'has_temperature = true OR has_wind = true'
+)
+def weather_stations():
     """Materialized view for DWD weather stations."""
     tu_meta = spark.read.text(paths.dwd_tu_meta_path)
     ff_meta = spark.read.text(paths.dwd_ff_meta_path)
@@ -54,24 +62,43 @@ def silver_weather_stations():
 
 
 @dp.materialized_view(
-    name='silver_station_weather_mapping',
-    comment='Parameter-specific spatial mapping from railway stations to nearest DWD sensors.',
+    name=contracts['station_weather_mapping'].published_name,
+    comment=contracts['station_weather_mapping'].description,
+    schema=contracts['station_weather_mapping'].schema_ddl,
 )
-@dp_dynamic.expect('valid_mapping_eva', 'eva IS NOT NULL')
-def silver_station_weather_mapping():
+@dp_dynamic.expect('valid_mapping_eva', "eva RLIKE '^[0-9]{8}$'")
+@dp_dynamic.expect(
+    'valid_mapping_station_ids',
+    "nearest_tu_station_id RLIKE '^[0-9]{5}$' "
+    "AND nearest_ff_station_id RLIKE '^[0-9]{5}$'",
+)
+@dp_dynamic.expect(
+    'valid_mapping_distances',
+    'nearest_tu_dist_km >= 0 AND nearest_ff_dist_km >= 0',
+)
+def station_weather_mapping():
     """Materialized view mapping stations to nearest temperature and wind sensors."""
-    stations_df = dp_dynamic.read('silver_stations')
-    weather_stations_df = dp_dynamic.read('silver_weather_stations')
+    stations_df = dp_dynamic.read('stations')
+    weather_stations_df = dp_dynamic.read('weather_stations')
     return build_station_weather_mapping(stations_df, weather_stations_df)
 
 
 @dp.materialized_view(
-    name='silver_temperature_hourly',
-    comment='Normalized hourly air temperature and humidity observations from DWD CDC.',
+    name=contracts['temperature_hourly'].published_name,
+    comment=contracts['temperature_hourly'].description,
+    schema=contracts['temperature_hourly'].schema_ddl,
 )
-@dp_dynamic.expect('valid_tu_station_id', 'dwd_station_id IS NOT NULL')
-@dp_dynamic.expect('valid_tu_hour', 'observation_hour_utc IS NOT NULL')
-def silver_temperature_hourly():
+@dp_dynamic.expect('valid_tu_station_id', "dwd_station_id RLIKE '^[0-9]{5}$'")
+@dp_dynamic.expect(
+    'valid_tu_hour',
+    "observation_hour_utc >= TIMESTAMP '2026-06-01 00:00:00' "
+    "AND observation_hour_utc < TIMESTAMP '2026-07-01 00:00:00'",
+)
+@dp_dynamic.expect(
+    'valid_humidity',
+    'humidity_pct IS NULL OR humidity_pct BETWEEN 0 AND 100',
+)
+def temperature_hourly():
     """Materialized view for hourly temperature observations."""
     raw_tu = (
         spark.read.option('delimiter', ';')
@@ -82,12 +109,22 @@ def silver_temperature_hourly():
 
 
 @dp.materialized_view(
-    name='silver_wind_hourly',
-    comment='Normalized hourly wind speed and direction observations from DWD CDC.',
+    name=contracts['wind_hourly'].published_name,
+    comment=contracts['wind_hourly'].description,
+    schema=contracts['wind_hourly'].schema_ddl,
 )
-@dp_dynamic.expect('valid_ff_station_id', 'dwd_station_id IS NOT NULL')
-@dp_dynamic.expect('valid_ff_hour', 'observation_hour_utc IS NOT NULL')
-def silver_wind_hourly():
+@dp_dynamic.expect('valid_ff_station_id', "dwd_station_id RLIKE '^[0-9]{5}$'")
+@dp_dynamic.expect(
+    'valid_ff_hour',
+    "observation_hour_utc >= TIMESTAMP '2026-06-01 00:00:00' "
+    "AND observation_hour_utc < TIMESTAMP '2026-07-01 00:00:00'",
+)
+@dp_dynamic.expect('valid_wind_speed', 'wind_speed_ms IS NULL OR wind_speed_ms >= 0')
+@dp_dynamic.expect(
+    'valid_wind_direction',
+    'wind_direction_deg IS NULL OR wind_direction_deg BETWEEN 0 AND 360',
+)
+def wind_hourly():
     """Materialized view for hourly wind observations."""
     raw_ff = (
         spark.read.option('delimiter', ';')
@@ -98,13 +135,14 @@ def silver_wind_hourly():
 
 
 @dp.materialized_view(
-    name='silver_train_stops',
-    comment='Normalized June 2026 operational timetable train stop events.',
+    name=contracts['train_stops'].published_name,
+    comment=contracts['train_stops'].description,
+    schema=contracts['train_stops'].schema_ddl,
 )
-@dp_dynamic.expect('valid_stop_id', 'id IS NOT NULL')
-@dp_dynamic.expect('valid_eva', 'eva IS NOT NULL')
+@dp_dynamic.expect('valid_stop_id', "id IS NOT NULL AND trim(id) <> ''")
+@dp_dynamic.expect('valid_eva', "eva RLIKE '^[0-9]{8}$'")
 @dp_dynamic.expect('valid_event_hour', 'event_hour_utc IS NOT NULL')
-def silver_train_stops():
+def train_stops():
     """Materialized view for operational train stop events."""
     raw_parquet = spark.read.schema(RAILWAY_RAW_SCHEMA).parquet(
         paths.railway_parquet_path
@@ -113,18 +151,23 @@ def silver_train_stops():
 
 
 @dp.materialized_view(
-    name='gold_train_stop_weather',
-    comment='Enriched analytical dataset combining stops, station metadata, and weather context.',
+    name=contracts['train_stop_weather'].published_name,
+    comment=contracts['train_stop_weather'].description,
+    schema=contracts['train_stop_weather'].schema_ddl,
 )
-@dp_dynamic.expect('valid_gold_id', 'id IS NOT NULL')
-@dp_dynamic.expect('valid_gold_eva', 'eva IS NOT NULL')
+@dp_dynamic.expect('valid_gold_id', "id IS NOT NULL AND trim(id) <> ''")
+@dp_dynamic.expect('valid_gold_eva', "eva RLIKE '^[0-9]{8}$'")
 @dp_dynamic.expect('valid_gold_hour', 'event_hour_utc IS NOT NULL')
-def gold_train_stop_weather():
+@dp_dynamic.expect(
+    'has_sensor_mapping',
+    'nearest_tu_station_id IS NOT NULL AND nearest_ff_station_id IS NOT NULL',
+)
+def train_stop_weather():
     """Materialized view for the final enriched multi-domain analytical dataset."""
     return build_gold_train_stop_weather(
-        train_stops_df=dp_dynamic.read('silver_train_stops'),
-        stations_df=dp_dynamic.read('silver_stations'),
-        mapping_df=dp_dynamic.read('silver_station_weather_mapping'),
-        temperature_df=dp_dynamic.read('silver_temperature_hourly'),
-        wind_df=dp_dynamic.read('silver_wind_hourly'),
+        train_stops_df=dp_dynamic.read('train_stops'),
+        stations_df=dp_dynamic.read('stations'),
+        mapping_df=dp_dynamic.read('station_weather_mapping'),
+        temperature_df=dp_dynamic.read('temperature_hourly'),
+        wind_df=dp_dynamic.read('wind_hourly'),
     )

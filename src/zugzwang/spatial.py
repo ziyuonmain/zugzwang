@@ -48,9 +48,9 @@ def build_station_weather_mapping(
     cross-joins and ranking windows without converting datasets to driver memory.
 
     Args:
-        stations_df: DataFrame conforming to silver_stations schema (must contain
+        stations_df: DataFrame conforming to `silver.stations` (must contain
             'eva', 'latitude', 'longitude').
-        weather_stations_df: DataFrame conforming to silver_weather_stations
+        weather_stations_df: DataFrame conforming to `silver.weather_stations`
             schema (must contain 'dwd_station_id', 'latitude', 'longitude',
             'has_temperature', 'has_wind').
 

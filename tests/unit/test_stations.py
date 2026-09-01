@@ -66,7 +66,7 @@ def test_transform_stations_from_raw_json_strings(spark: SparkSession):
     transformed_df = transform_stations(raw_df)
     rows = {r['eva']: r for r in transformed_df.collect()}
 
-    # 2 stations with 3 total EVAs -> 3 rows in silver_stations
+    # 2 stations with 3 total EVAs -> 3 rows in silver.stations
     assert len(rows) == 3
 
     aug = rows['08000013']

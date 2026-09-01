@@ -25,7 +25,7 @@ def local_to_utc_timestamp(
     # Interpret the physical integer as a local wall-clock value before converting it.
     local_ts = F.when(
         col.cast('string').rlike('^[0-9]{14,}$'),
-        F.timestamp_seconds((col / 1_000_000_000).cast('long')),
+        F.timestamp_seconds((col.cast('long') / 1_000_000_000).cast('long')),
     ).otherwise(col.cast('timestamp'))
 
     return F.to_utc_timestamp(local_ts, source_tz)

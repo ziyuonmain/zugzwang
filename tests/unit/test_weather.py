@@ -100,8 +100,8 @@ def test_transform_temperature_hourly_sentinels(spark: SparkSession):
         ]
     )
     data = [
-        ('1420', 2026060100, 1, 17.5, 75.0),
-        ('1420', 2026060101, 1, -999.0, -999.0),  # Sentinels
+        ('         1420', 2026060100, 1, 17.5, 75.0),
+        ('         1420', 2026060101, 1, -999.0, -999.0),  # Sentinels
     ]
     raw_df = spark.createDataFrame(data, schema=schema)
 
@@ -134,8 +134,8 @@ def test_transform_wind_hourly_sentinels(spark: SparkSession):
         ]
     )
     data = [
-        ('1420', 2026060100, 1, 3.5, 270),
-        ('1420', 2026060101, 1, -999.0, -999),  # Sentinels
+        ('         1420', 2026060100, 1, 3.5, 270),
+        ('         1420', 2026060101, 1, -999.0, -999),  # Sentinels
     ]
     raw_df = spark.createDataFrame(data, schema=schema)
 

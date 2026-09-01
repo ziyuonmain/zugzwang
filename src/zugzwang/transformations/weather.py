@@ -39,7 +39,7 @@ def build_weather_stations(
     target_start_date: int = 20260601,
     target_end_date: int = 20260630,
 ) -> DataFrame:
-    """Combines active temperature and wind metadata into silver_weather_stations.
+    """Combines active temperature and wind metadata into weather stations.
 
     Filters stations by validity across the target period and merges networks
     into a single reference table with has_temperature and has_wind flags.
@@ -51,7 +51,7 @@ def build_weather_stations(
         target_end_date: Integer YYYYMMDD for end of month (defaults to 20260630).
 
     Returns:
-        DataFrame conforming to silver_weather_stations schema.
+        DataFrame conforming to the `silver.weather_stations` schema.
     """
     tu_parsed = (
         _parse_dwd_station_metadata(tu_meta_text_df)
@@ -106,7 +106,7 @@ def transform_temperature_hourly(
     target_start_ts: str = '2026-06-01 00:00:00',
     target_end_ts: str = '2026-07-01 00:00:00',
 ) -> DataFrame:
-    """Transforms raw DWD hourly air temperature observations into silver_temperature_hourly.
+    """Transforms raw DWD observations into hourly temperature records.
 
     Coerces sentinel values (-999.0) to NULL, standardizes UTC timestamp keys,
     and limits observations strictly to the target month.
@@ -117,7 +117,7 @@ def transform_temperature_hourly(
         target_end_ts: Exclusive UTC end timestamp (defaults to '2026-07-01 00:00:00').
 
     Returns:
-        DataFrame conforming to silver_temperature_hourly schema.
+        DataFrame conforming to the `silver.temperature_hourly` schema.
     """
     # Clean whitespace in column names if present
     cleaned_df = raw_tu_df
@@ -127,7 +127,9 @@ def transform_temperature_hourly(
     return (
         cleaned_df.filter(F.col('STATIONS_ID').isNotNull())
         .select(
-            F.lpad(F.col('STATIONS_ID').cast('string'), 5, '0').alias('dwd_station_id'),
+            F.lpad(F.trim(F.col('STATIONS_ID').cast('string')), 5, '0').alias(
+                'dwd_station_id'
+            ),
             parse_dwd_mess_datum_to_utc(F.col('MESS_DATUM')).alias(
                 'observation_hour_utc'
             ),
@@ -154,7 +156,7 @@ def transform_wind_hourly(
     target_start_ts: str = '2026-06-01 00:00:00',
     target_end_ts: str = '2026-07-01 00:00:00',
 ) -> DataFrame:
-    """Transforms raw DWD hourly wind observations into silver_wind_hourly.
+    """Transforms raw DWD observations into hourly wind records.
 
     Coerces sentinel values (-999.0) to NULL, standardizes UTC timestamp keys,
     and limits observations strictly to the target month.
@@ -165,7 +167,7 @@ def transform_wind_hourly(
         target_end_ts: Exclusive UTC end timestamp (defaults to '2026-07-01 00:00:00').
 
     Returns:
-        DataFrame conforming to silver_wind_hourly schema.
+        DataFrame conforming to the `silver.wind_hourly` schema.
     """
     cleaned_df = raw_ff_df
     for c in raw_ff_df.columns:
@@ -174,7 +176,9 @@ def transform_wind_hourly(
     return (
         cleaned_df.filter(F.col('STATIONS_ID').isNotNull())
         .select(
-            F.lpad(F.col('STATIONS_ID').cast('string'), 5, '0').alias('dwd_station_id'),
+            F.lpad(F.trim(F.col('STATIONS_ID').cast('string')), 5, '0').alias(
+                'dwd_station_id'
+            ),
             parse_dwd_mess_datum_to_utc(F.col('MESS_DATUM')).alias(
                 'observation_hour_utc'
             ),

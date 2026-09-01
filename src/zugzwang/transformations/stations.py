@@ -1,4 +1,4 @@
-"""StaDa railway station master data transformation into silver_stations."""
+"""StaDa railway station master data transformation for `silver.stations`."""
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, SparkSession
@@ -71,7 +71,7 @@ def read_stada_json_array(spark: SparkSession, path: str) -> DataFrame:
 
 
 def transform_stations(raw_df: DataFrame) -> DataFrame:
-    """Transforms raw StaDa station records into conforming silver_stations.
+    """Transforms raw StaDa station records into conforming station records.
 
     Unnests multi-EVA groupings, standardizes EVA keys to 8-character zero-padded
     strings, and extracts geographic coordinates (WGS84) and category hierarchies.
@@ -81,7 +81,7 @@ def transform_stations(raw_df: DataFrame) -> DataFrame:
             or already parsed station structs.
 
     Returns:
-        DataFrame conforming to silver_stations schema:
+        DataFrame conforming to the `silver.stations` schema:
             - eva: string (8-character zero-padded)
             - station_number: long
             - station_name: string

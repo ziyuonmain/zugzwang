@@ -17,14 +17,14 @@ def build_gold_train_stop_weather(
     hourly UTC timestamp anchors without claiming causal attribution.
 
     Args:
-        train_stops_df: silver_train_stops DataFrame.
-        stations_df: silver_stations DataFrame.
-        mapping_df: silver_station_weather_mapping DataFrame.
-        temperature_df: silver_temperature_hourly DataFrame.
-        wind_df: silver_wind_hourly DataFrame.
+        train_stops_df: `silver.train_stops` DataFrame.
+        stations_df: `silver.stations` DataFrame.
+        mapping_df: `silver.station_weather_mapping` DataFrame.
+        temperature_df: `silver.temperature_hourly` DataFrame.
+        wind_df: `silver.wind_hourly` DataFrame.
 
     Returns:
-        DataFrame conforming to gold_train_stop_weather schema.
+        DataFrame conforming to the `gold.train_stop_weather` schema.
     """
     # 1. Alias DataFrames to prevent column collision
     ts = train_stops_df.alias('ts')

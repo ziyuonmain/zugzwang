@@ -1,4 +1,4 @@
-"""Operational railway event transformations into silver_train_stops."""
+"""Operational railway event transformations for `silver.train_stops`."""
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame
@@ -42,7 +42,7 @@ RAILWAY_RAW_SCHEMA = StructType(
 
 
 def transform_train_stops(raw_parquet_df: DataFrame) -> DataFrame:
-    """Transforms raw timetable stop events into silver_train_stops.
+    """Transforms raw timetable stop events into normalized train stops.
 
     Standardizes station EVA numbers, converts local CEST timestamps to UTC,
     and constructs hourly UTC anchor keys for multi-domain joins.
@@ -51,11 +51,11 @@ def transform_train_stops(raw_parquet_df: DataFrame) -> DataFrame:
         raw_parquet_df: Raw DataFrame loaded from monthly operational Parquet.
 
     Returns:
-        DataFrame conforming to silver_train_stops schema.
+        DataFrame conforming to the `silver.train_stops` schema.
     """
     local_ts_col = F.when(
         F.col('time').cast('string').rlike('^[0-9]{14,}$'),
-        F.timestamp_seconds((F.col('time') / 1_000_000_000).cast('long')),
+        F.timestamp_seconds((F.col('time').cast('long') / 1_000_000_000).cast('long')),
     ).otherwise(F.col('time').cast('timestamp'))
     utc_time_col = local_to_utc_timestamp(F.col('time'), 'Europe/Berlin')
 

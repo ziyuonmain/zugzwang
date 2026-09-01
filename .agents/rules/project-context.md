@@ -10,7 +10,7 @@ Do not infer architecture that is not implemented yet.
 
 ## Current status
 
-June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundles (`zugzwang_dev`), and successfully materialized on Databricks Serverless compute (`Update 28d546`). All Silver and Gold materialized views are published in `zugzwang_dev.silver_gold`.
+June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundles (`zugzwang_dev`), and successfully materialized on Databricks Serverless compute (`Update 28d546`). The bundle defines separate `raw`, `silver`, and `gold` schemas; the schema split requires deployment and refresh before the workspace reflects it.
 
 ## Data sources
 
@@ -24,14 +24,14 @@ June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundle
 
 - **Raw layer:** Immutable source files in Unity Catalog Volume (`/Volumes/zugzwang_dev/raw/landing/`).
 - **Silver layer:**
-  - `silver_stations`: Conforming railway station master dimension.
-  - `silver_weather_stations`: Active DWD meteorological stations with `has_temperature` and `has_wind` attributes.
-  - `silver_station_weather_mapping`: Precomputed Haversine nearest-sensor bridge table with separate temperature and wind distances.
-  - `silver_temperature_hourly`: Normalized hourly air temperature and humidity.
-  - `silver_wind_hourly`: Normalized hourly wind speed and direction.
-  - `silver_train_stops`: Normalized operational stop events with UTC hour anchors.
+  - `silver.stations`: Conforming railway station master dimension.
+  - `silver.weather_stations`: Active DWD meteorological stations with `has_temperature` and `has_wind` attributes.
+  - `silver.station_weather_mapping`: Precomputed Haversine nearest-sensor bridge table with separate temperature and wind distances.
+  - `silver.temperature_hourly`: Normalized hourly air temperature and humidity.
+  - `silver.wind_hourly`: Normalized hourly wind speed and direction.
+  - `silver.train_stops`: Normalized operational stop events with UTC hour anchors.
 - **Gold layer:**
-  - `gold_train_stop_weather`: Enriched multi-domain analytical dataset combining stops, station tiers, and ambient environmental conditions.
+  - `gold.train_stop_weather`: Enriched multi-domain analytical dataset combining stops, station tiers, and ambient environmental conditions.
 
 ## Execution model and responsibility split
 
@@ -41,7 +41,7 @@ June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundle
 ## Databricks resources
 
 - Declarative Automation Bundle: `databricks.yml` configured for `dev` target with Serverless compute.
-- Lakeflow Pipeline: `zugzwang_june2026` targeting catalog `zugzwang_dev` and schema `silver_gold`.
+- Lakeflow Pipeline: `zugzwang_june2026` defaults to `zugzwang_dev.silver` and publishes its Gold mart to `zugzwang_dev.gold`.
 
 ## Important decisions
 

@@ -58,6 +58,11 @@ Zugzwang snapshot; the ingestion manifest must also record a content digest.
 
 ## Station reference data
 
+The field contract is defined by the official
+[DB InfraGO StaDa API](https://developers.deutschebahn.com/db-api-marketplace/apis/product/stada/api/173477),
+which provides master data for German railway stations managed by DB InfraGO
+under CC BY 4.0.
+
 The June station snapshot is extracted from successful
 `station-data/v2/stations` responses in piebro's raw Parquet archive for
 2026-06-01. The consolidated artifact is a pretty-printed JSON array containing
@@ -75,7 +80,7 @@ Zugzwang uses:
 - coordinates attached to each nested EVA number;
 - the first available Ril100 identifier for the current Silver representation.
 
-One StaDa station can contain multiple EVA numbers, so `silver_stations` has one
+One StaDa station can contain multiple EVA numbers, so `silver.stations` has one
 row per usable EVA rather than one row per top-level station object.
 
 ## DWD meteorological observations
@@ -99,6 +104,13 @@ Official source directories:
 
 - [Hourly air temperature](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/)
 - [Hourly wind](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/)
+
+Parameter names, units, coordinate reference system, and quality-control
+semantics follow the official DWD dataset descriptions linked from those
+directories, including the
+[air-temperature and humidity description](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/DESCRIPTION_obsgermany_climate_hourly_air_temperature_en.pdf)
+and the
+[wind description](https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/DESCRIPTION_obsgermany_climate_hourly_wind_en.pdf).
 
 ## Snapshot policy
 

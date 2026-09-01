@@ -1,7 +1,12 @@
 resources:
   jobs:
     zugzwang_pipeline_job:
-      name: "Zugzwang End-to-End Orchestration Job"
+      name: "[${bundle.target}] Zugzwang End-to-End Orchestration Job"
+      description: "Validates and lands the configured immutable source snapshot, then refreshes the Zugzwang Silver and Gold Lakeflow materialized views. Safe reruns reuse a valid landing snapshot."
+      tags:
+        project: zugzwang
+        environment: ${bundle.target}
+        component: orchestration
       max_concurrent_runs: 1
       environments:
         - environment_key: default
@@ -22,4 +27,3 @@ resources:
             - task_key: prepare_sources
           pipeline_task:
             pipeline_id: ${resources.pipelines.zugzwang_june2026.id}
-

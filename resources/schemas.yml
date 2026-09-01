@@ -3,12 +3,17 @@ resources:
     raw:
       name: raw
       catalog_name: ${var.catalog}
-      comment: "Landing zone and raw source data volumes for Zugzwang"
+      comment: "Bronze-equivalent landing boundary containing immutable upstream railway, station-reference, and weather source artifacts"
 
-    silver_gold:
-      name: ${var.schema}
+    silver:
+      name: silver
       catalog_name: ${var.catalog}
-      comment: "Normalized Silver dimensions/facts and Gold analytical mart"
+      comment: "Normalized reusable railway, DB InfraGO station, DWD weather, and nearest-sensor mapping datasets"
+
+    gold:
+      name: gold
+      catalog_name: ${var.catalog}
+      comment: "Consumer-facing analytical datasets combining operational railway events with station and environmental context"
 
   volumes:
     landing:
@@ -16,4 +21,4 @@ resources:
       catalog_name: ${var.catalog}
       schema_name: ${resources.schemas.raw.name}
       volume_type: MANAGED
-      comment: "Immutable raw source data files"
+      comment: "Manifest-validated immutable source snapshot containing railway Parquet, StaDa JSON, and extracted DWD observation files"

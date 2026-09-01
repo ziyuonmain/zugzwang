@@ -19,9 +19,9 @@ flowchart TD
     end
 
     subgraph DataFlow["Declarative Transformation Core"]
-        raw[("Raw Landing Volume<br/>/Volumes/zugzwang_*/raw/landing/")]
-        silver[("Silver Medallion Layer<br/>(Cleaned dimensions, sensor facts & proximity bridge)")]
-        gold[("Gold Medallion Mart<br/>(gold_train_stop_weather)")]
+        raw[("Raw Landing Volume<br/>zugzwang_*.raw.landing")]
+        silver[("Silver schema<br/>(Cleaned dimensions, sensor facts & proximity bridge)")]
+        gold[("Gold schema<br/>(train_stop_weather)")]
         raw --> silver --> gold
     end
 
@@ -36,7 +36,7 @@ The Lakeflow Declarative Pipeline is defined in `src/zugzwang/pipeline.py`.
 - **Role:** Owns all `Raw -> Silver -> Gold` dataset transformations and joins.
 - **Paradigm:** Declarative, distributed PySpark DataFrames (`@dp.materialized_view`).
 - **Responsibilities:**
-  - Reading a previously validated landing snapshot from `/Volumes/zugzwang/raw/landing/`.
+  - Reading a previously validated landing snapshot from `/Volumes/zugzwang_*/raw/landing/`.
   - Deterministic normalization and analytical joins.
   - Dependency resolution, concurrency management, and ACID Delta Lake materialization.
   - Real-time DAG lineage and dataset monitoring.
@@ -46,6 +46,21 @@ A direct pipeline refresh is supported only when the configured landing
 snapshot has already passed manifest validation. The planned end-to-end entry
 point is the outer Lakeflow Job, which prepares and validates sources before it
 triggers the pipeline.
+
+### Unity Catalog layout
+
+The bundle separates assets by responsibility while retaining one declarative
+pipeline:
+
+- `raw` contains the managed `landing` Volume with immutable upstream files.
+- `silver` contains normalized, reusable materialized views.
+- `gold` contains analytical datasets intended for downstream consumption.
+
+The raw schema is the project's Bronze-equivalent boundary. It deliberately
+uses the more literal name `raw` because it contains source files rather than
+duplicative Bronze Delta tables. The pipeline defaults to `silver` and uses a
+fully qualified name for its Gold output, preserving a single dependency graph
+and end-to-end lineage across both schemas.
 
 ### Orchestration job
 
@@ -66,7 +81,7 @@ The outer orchestration job coordinates operational tasks outside the declarativ
 
 - Land raw source files manually/statically in Unity Catalog landing Volume (`data-2026-06.parquet`, `stada_stations.json`, extracted DWD `.txt` files).
 - Validate the Lakeflow Declarative Pipeline end-to-end on Databricks Serverless compute.
-- Verify 100% join match rates and schema conformity on `gold_train_stop_weather`.
+- Verify 100% join match rates and schema conformity on `gold.train_stop_weather`.
 
 ### Milestone 2: Automated ingestion
 

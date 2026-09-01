@@ -439,14 +439,14 @@ databricks bundle run -t dev zugzwang_june2026
 
 After the run, verify at minimum:
 
-- `silver_train_stops` row count;
+- `silver.train_stops` row count;
 - unique railway EVA count;
 - station join coverage;
 - station-to-temperature mapping coverage;
 - station-to-wind mapping coverage;
 - temperature observation match rate;
 - wind observation match rate;
-- `gold_train_stop_weather` row count;
+- `gold.train_stop_weather` row count;
 - no accidental row multiplication in the Gold join.
 
 For the June 2026 railway source, the expected train-stop input count is:

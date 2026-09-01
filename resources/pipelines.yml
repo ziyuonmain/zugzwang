@@ -1,12 +1,19 @@
 resources:
   pipelines:
     zugzwang_june2026:
-      name: "Zugzwang June 2026 Pipeline"
-      schema: ${resources.schemas.silver_gold.name}
+      name: "[${bundle.target}] Zugzwang June 2026 Pipeline"
+      tags:
+        project: zugzwang
+        environment: ${bundle.target}
+        component: transformation
+      schema: ${resources.schemas.silver.name}
       catalog: ${var.catalog}
       continuous: false
       serverless: true
       channel: preview
+      environment:
+        dependencies:
+          - pyyaml==6.0.3
       libraries:
         - file:
             path: ../src/pipeline.py

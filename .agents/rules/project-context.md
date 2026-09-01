@@ -15,7 +15,9 @@ June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundle
 ## Data sources
 
 - **Operational timetable events:** `piebro/deutsche-bahn-data` (June 2026 release: 14,752,336 stop events across 5,344 unique EVAs).
-- **Railway reference data:** DB StaDa station master data snapshot (June 2026: 5,462 stations with WGS84 coordinates and price categories 1–7).
+- **Railway reference data:** DB StaDa station master data snapshot (June 2026:
+  5,412 top-level station objects yielding 5,462 unique EVA rows with WGS84
+  coordinates and price categories 1–7).
 - **Meteorological observations:** DWD Climate Data Center hourly temperature (`TU`, 494 active stations) and wind (`FF`, 295 active stations) observations (June 2026).
 
 ## Data model
@@ -44,4 +46,6 @@ June 2026 vertical slice fully implemented, deployed via Databricks Asset Bundle
 ## Important decisions
 
 - [ADR 0001: Source selection and multi-domain weather integration](docs/decisions/0001-source-selection-and-weather-integration.md)
+- [ADR 0002: Ingestion snapshot and execution contract](docs/decisions/0002-ingestion-snapshot-contract.md)
 - [Architecture and execution model](docs/architecture.md)
+- [Source provenance and contracts](docs/data-sources.md)

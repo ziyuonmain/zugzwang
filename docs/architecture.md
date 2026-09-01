@@ -36,11 +36,16 @@ The Lakeflow Declarative Pipeline is defined in `src/zugzwang/pipeline.py`.
 - **Role:** Owns all `Raw -> Silver -> Gold` dataset transformations and joins.
 - **Paradigm:** Declarative, distributed PySpark DataFrames (`@dp.materialized_view`).
 - **Responsibilities:**
-  - Ingesting raw immutable files directly from `/Volumes/zugzwang/raw/landing/`.
-  - Data quality enforcement via declarative expectations.
+  - Reading a previously validated landing snapshot from `/Volumes/zugzwang/raw/landing/`.
+  - Deterministic normalization and analytical joins.
   - Dependency resolution, concurrency management, and ACID Delta Lake materialization.
   - Real-time DAG lineage and dataset monitoring.
 - **Constraints:** No driver memory collection (`toPandas()`, `collect()`), no procedural I/O scripts.
+
+A direct pipeline refresh is supported only when the configured landing
+snapshot has already passed manifest validation. The planned end-to-end entry
+point is the outer Lakeflow Job, which prepares and validates sources before it
+triggers the pipeline.
 
 ### Orchestration job
 
@@ -69,3 +74,5 @@ The outer orchestration job coordinates operational tasks outside the declarativ
 
 - Implement `prepare_sources` task to fetch upstream source data automatically.
 - Configure and deploy the multi-task Lakeflow Job in `databricks.yml` to orchestrate end-to-end runs (`prepare_sources` $\to$ `refresh_pipeline`).
+- Publish immutable period snapshots using the contract in
+  [ADR 0002](decisions/0002-ingestion-snapshot-contract.md).

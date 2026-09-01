@@ -151,10 +151,16 @@ print(f'Wrote {len(stations):,} stations to {target}')
 PY
 ```
 
-The feasibility spike observed approximately:
+The file contract is a single multiline JSON array. The pipeline reads it with
+Spark's multiline JSON reader and produces one parsed station object per row.
+Do not convert the file to line-oriented text without updating the pipeline
+reader and its contract test.
+
+The inspected snapshot contains:
 
 ```text
-5,462 station records
+5,412 top-level station records
+5,462 unique EVA entries
 ```
 
 Verify the generated file:
@@ -173,6 +179,10 @@ with open('data/landing/stada/stada_stations.json', encoding='utf-8') as file:
     stations = json.load(file)
 
 print(f'Stations: {len(stations):,}')
+print(
+    'Unique EVAs:',
+    f"{len({eva['number'] for station in stations for eva in station.get('evaNumbers', []) if eva.get('number') is not None}):,}",
+)
 PY
 ```
 
@@ -452,4 +462,3 @@ The Gold row count should remain equal to the train-stop row count if all enrich
 - Railway dataset: `https://huggingface.co/datasets/piebro/deutsche-bahn-data`
 - DWD hourly temperature: `https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/air_temperature/recent/`
 - DWD hourly wind: `https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/wind/recent/`
-

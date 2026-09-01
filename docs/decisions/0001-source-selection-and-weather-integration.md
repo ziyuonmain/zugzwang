@@ -24,7 +24,7 @@ Option A represents a standard star-schema join on a single surrogate key (`eva`
 ## Decision
 
 1. **Operational Railway Events:** Ingest June 2026 operational timetable stop events from the `piebro/deutsche-bahn-data` monthly Parquet release (14.75M rows).
-2. **Railway Reference Data:** Ingest the contemporaneous June 2026 StaDa (`station-data/v2/stations`) station master snapshot (5,462 stations) as the conforming station dimension.
+2. **Railway Reference Data:** Ingest the contemporaneous June 2026 StaDa (`station-data/v2/stations`) station master snapshot (5,412 station objects yielding 5,462 EVA rows) as the conforming station dimension.
 3. **Environmental Fact Stream:** Ingest Deutscher Wetterdienst (DWD) Climate Data Center (CDC) hourly observations for air temperature (`TU`) and wind speed/direction (`FF`) valid during June 2026.
 4. **Parameter-Specific Spatial Mapping:** Map railway stations independently to the nearest active DWD temperature station (494 stations) and nearest active DWD wind station (295 stations) via Haversine distance, rather than forcing a single joint station.
 5. **Quality Attribute Persistence:** Persist geodesic distance in kilometers (`nearest_tu_dist_km`, `nearest_ff_dist_km`) in the station-weather proximity bridge as a queryable data-quality and confidence metric.
@@ -36,9 +36,9 @@ Hands-on profiling against real source datasets yielded the following verified f
 
 - **Operational Scale (Full June 2026):** `14,752,336` stop events across `5,344` unique operational stations (`eva`).
 - **Station Master Match Rate:** `100.0000%` row-level join match rate (`14,752,336 / 14,752,336` records) and `100.00%` unique EVA match rate (`5,344 / 5,344` EVAs) against the contemporaneous StaDa dataset.
-- **Station Coordinate Completeness:** 100.0% of the 5,462 StaDa stations have valid WGS84 coordinates (latitude 47.411°–54.907°, longitude 6.071°–14.979°).
+- **Station Coordinate Completeness:** 100.0% of the 5,462 StaDa EVA rows have valid WGS84 coordinates (latitude 47.411°–54.907°, longitude 6.071°–14.979°).
 - **DWD Network Disparity (June 2026):** 494 active temperature stations vs. 295 active wind stations; only 226 stations record both parameters. Only 48.21% of railway stations map to the same physical site for both variables.
-- **Spatial Proximity Distributions (5,462 Stations):**
+- **Spatial Proximity Distributions (5,462 station-EVA rows):**
   - *Temperature:* Median `9.96 km`, p90 `17.97 km`, p95 `20.49 km`, max `36.86 km` (98.94% $\le 25\text{ km}$).
   - *Wind:* Median `13.79 km`, p90 `24.67 km`, p95 `27.47 km`, max `44.45 km` (90.83% $\le 25\text{ km}$).
   - *Forced Joint Station Penalty:* Forcing a single joint station adds an average 5.69 km penalty to temperature mapping and pushes maximum distance across Germany to `63.73 km`.
